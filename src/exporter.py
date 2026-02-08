@@ -13,6 +13,8 @@ from pathlib import Path
 from collections import defaultdict
 from dotenv import load_dotenv
 
+from config import CATEGORIES, TITLE_NORMALIZE, get_category
+
 # Load .env from parent directory
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -32,94 +34,6 @@ INFLUX_BUCKET = os.getenv("INFLUX_BUCKET", "screentime")
 # Paths
 CSV_FILE = SCRIPT_DIR / "data" / "screentime.csv"
 LAST_EXPORT_FILE = SCRIPT_DIR / "data" / ".last_export_timestamp"
-
-# App Categories
-CATEGORIES = {
-    # Social
-    "Discord": "social",
-    "X (Twitter)": "social",
-    "Instagram": "social",
-    "Snapchat": "social",
-    "TikTok": "social",
-    "Reddit": "social",
-    "WhatsApp": "social",
-    "WhatsApp Business": "social",
-    "WhatsApp Messenger": "social",
-
-    # Communication
-    "Messages": "communication",
-    "Phone": "communication",
-    "Phone Call": "communication",
-    "Microsoft Teams": "communication",
-    "Gmail": "communication",
-    "Outlook": "communication",
-    "WEB.DE Mail": "communication",
-
-    # Productivity
-    "Xcode": "productivity",
-    "VS Code": "productivity",
-    "Terminal": "productivity",
-    "Finder": "productivity",
-    "Antigravity": "productivity",
-    "GitHub": "productivity",
-    "Personio": "productivity",
-
-    # Browser
-    "Chrome": "browser",
-    "Safari": "browser",
-
-    # Media
-    "Spotify": "media",
-    "Photos": "media",
-    "Camera": "media",
-    "Your Spotify Stats": "media",
-
-    # Utilities
-    "Google Gemini": "utilities",
-    "Home Assistant": "utilities",
-    "MS Authenticator": "utilities",
-    "Clock": "utilities",
-    "Calendar": "utilities",
-    "Weather": "utilities",
-    "Settings": "utilities",
-    "System Settings": "utilities",
-    "App Store": "utilities",
-    "UniFi": "utilities",
-
-    # Shopping
-    "Amazon": "shopping",
-    "DHL": "shopping",
-    "Kleinanzeigen": "shopping",
-    "Mydealz": "shopping",
-    "Lidl Plus": "shopping",
-}
-
-# Normalize long app names to short ones
-TITLE_NORMALIZE = {
-    "TikTok - Videos, Shop & LIVE": "TikTok",
-    "Discord - Talk, Chat & Hang Out": "Discord",
-    "WhatsApp Messenger": "WhatsApp",
-    "Instagram": "Instagram",
-    "Snapchat": "Snapchat",
-    "Reddit": "Reddit",
-    "Gmail - Email by Google": "Gmail",
-    "Google Chrome": "Chrome",
-    "Microsoft Teams": "Microsoft Teams",
-    "Microsoft Outlook": "Outlook",
-    "Spotify: Music and Podcasts": "Spotify",
-    "Kleinanzeigen - without eBay": "Kleinanzeigen",
-}
-
-def get_category(title: str) -> str:
-    """Determines the category of an app."""
-    if title in CATEGORIES:
-        return CATEGORIES[title]
-
-    # Detect system apps
-    if title.startswith("System:") or title in ["Lock Screen", "Control Center", "Clock Widget"]:
-        return "system"
-
-    return "other"
 
 
 def get_last_export_timestamp() -> float:
@@ -223,8 +137,7 @@ def calculate_daily_aggregates(df: pd.DataFrame, target_date: datetime.date = No
     Returns:
         {
             "total_minutes": 245.5,
-            "iphone_minutes": 180.0,
-            "mac_minutes": 65.5,
+            "by_device": {"iPhone": 180.0, "Mac": 65.5, ...},
             "top_app": "Chrome",
             "top_app_minutes": 45.0,
             "by_category": {"social": 90, "productivity": 60, ...},
@@ -243,8 +156,10 @@ def calculate_daily_aggregates(df: pd.DataFrame, target_date: datetime.date = No
 
     # Base aggregates
     total_seconds = df_day["duration"].sum()
-    iphone_seconds = df_day[df_day["source"] == "iphone"]["duration"].sum()
-    mac_seconds = df_day[df_day["source"] == "mac"]["duration"].sum()
+
+    # Per-device aggregates (dynamic)
+    by_device = df_day.groupby("source")["duration"].sum().to_dict()
+    by_device = {k: round(v / 60, 1) for k, v in by_device.items()}
 
     # Top App
     app_totals = df_day.groupby("title")["duration"].sum().sort_values(ascending=False)
@@ -261,8 +176,7 @@ def calculate_daily_aggregates(df: pd.DataFrame, target_date: datetime.date = No
 
     return {
         "total_minutes": round(total_seconds / 60, 1),
-        "iphone_minutes": round(iphone_seconds / 60, 1),
-        "mac_minutes": round(mac_seconds / 60, 1),
+        "by_device": by_device,
         "top_app": top_app,
         "top_app_minutes": round(top_app_seconds / 60, 1),
         "by_category": by_category,
@@ -326,20 +240,12 @@ def export_to_homeassistant(df: pd.DataFrame):
         print("[HA] No data for today")
         return
 
-    # Update sensors
+    # Base sensors
     sensors = [
         ("sensor.screentime_total", aggregates["total_minutes"], "min", {
             "friendly_name": "Screen Time Total",
             "icon": "mdi:cellphone-screen",
             "session_count": aggregates["session_count"],
-        }),
-        ("sensor.screentime_iphone", aggregates["iphone_minutes"], "min", {
-            "friendly_name": "Screen Time iPhone",
-            "icon": "mdi:cellphone",
-        }),
-        ("sensor.screentime_mac", aggregates["mac_minutes"], "min", {
-            "friendly_name": "Screen Time Mac",
-            "icon": "mdi:laptop",
         }),
         ("sensor.screentime_top_app", aggregates["top_app"], None, {
             "friendly_name": "Top App Today",
@@ -348,13 +254,32 @@ def export_to_homeassistant(df: pd.DataFrame):
         }),
     ]
 
+    # Dynamic per-device sensors
+    for device_name, minutes in aggregates["by_device"].items():
+        # Create entity_id from device name (e.g., "iPhone 15 Pro" -> "screentime_iphone_15_pro")
+        entity_suffix = device_name.lower().replace(" ", "_").replace("-", "_")
+        entity_id = f"sensor.screentime_{entity_suffix}"
+
+        # Choose icon based on device type
+        if "mac" in device_name.lower():
+            icon = "mdi:laptop"
+        elif "ipad" in device_name.lower():
+            icon = "mdi:tablet"
+        else:
+            icon = "mdi:cellphone"
+
+        sensors.append((entity_id, minutes, "min", {
+            "friendly_name": f"Screen Time {device_name}",
+            "icon": icon,
+        }))
+
     for entity_id, state, unit, attrs in sensors:
         update_ha_sensor(entity_id, state, attrs, unit)
 
     # Category sensor with all values as attributes
     update_ha_sensor(
         "sensor.screentime_by_category",
-        aggregates["by_category"].get("social", 0),  # Social als Hauptwert
+        aggregates["by_category"].get("Social", 0),
         {
             "friendly_name": "Screen Time by Category",
             "icon": "mdi:chart-pie",

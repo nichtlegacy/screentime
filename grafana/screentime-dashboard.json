@@ -1,0 +1,464 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_INFLUXDB",
+      "label": "InfluxDB",
+      "description": "InfluxDB datasource for screen time data",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "1.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    }
+  ],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total Screen Time",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 14400 },
+              { "color": "red", "value": 28800 }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> filter(fn: (r) => \"${source}\" == \"All\" or r.source == \"${source}\")\n  |> group()\n  |> sum()\n  |> keep(columns: [\"_value\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "",
+      "gridPos": { "h": 5, "w": 3, "x": 6, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#5794F2", "mode": "fixed" },
+          "unit": "s",
+          "displayName": "iPhone"
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r.source == \"iPhone\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> group()\n  |> sum()\n  |> keep(columns: [\"_value\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "",
+      "gridPos": { "h": 5, "w": 3, "x": 9, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "fixedColor": "#73BF69", "mode": "fixed" },
+          "unit": "s",
+          "displayName": "Mac"
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r.source == \"Mac\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> group()\n  |> sum()\n  |> keep(columns: [\"_value\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "By Category",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "s",
+          "custom": {
+            "cellOptions": { "type": "gauge", "mode": "gradient" },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "category" },
+            "properties": [
+              { "id": "custom.width", "value": 120 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": false,
+        "footer": { "show": false },
+        "sortBy": [{ "displayName": "_value", "desc": true }]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> filter(fn: (r) => \"${source}\" == \"All\" or r.source == \"${source}\")\n  |> group(columns: [\"category\"])\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> keep(columns: [\"category\", \"_value\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "By Device",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "s",
+          "custom": {
+            "cellOptions": { "type": "gauge", "mode": "gradient", "valueDisplayMode": "text" },
+            "inspect": false
+          },
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "source" },
+            "properties": [
+              { "id": "custom.width", "value": 80 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": false,
+        "footer": { "show": false },
+        "sortBy": [{ "displayName": "_value", "desc": true }]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> group(columns: [\"source\"])\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> keep(columns: [\"source\", \"_value\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top Apps",
+      "gridPos": { "h": 12, "w": 8, "x": 0, "y": 5 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 600 },
+              { "color": "yellow", "value": 1800 },
+              { "color": "orange", "value": 3600 },
+              { "color": "red", "value": 7200 }
+            ]
+          },
+          "unit": "s",
+          "custom": {
+            "cellOptions": { "type": "gauge", "mode": "gradient" },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "App" },
+            "properties": [
+              { "id": "custom.width", "value": 180 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "footer": { "show": false },
+        "sortBy": [{ "displayName": "Duration", "desc": true }]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> filter(fn: (r) => \"${source}\" == \"All\" or r.source == \"${source}\")\n  |> group(columns: [\"title\"])\n  |> sum()\n  |> group()\n  |> top(n: 10, columns: [\"_value\"])\n  |> keep(columns: [\"title\", \"_value\"])\n  |> rename(columns: {title: \"App\", _value: \"Duration\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top Apps (iPhone)",
+      "gridPos": { "h": 12, "w": 8, "x": 8, "y": 5 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#5794F2", "value": null },
+              { "color": "#3274D9", "value": 1800 },
+              { "color": "#1F60C4", "value": 3600 }
+            ]
+          },
+          "unit": "s",
+          "custom": {
+            "cellOptions": { "type": "gauge", "mode": "gradient" },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "App" },
+            "properties": [
+              { "id": "custom.width", "value": 180 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "footer": { "show": false },
+        "sortBy": [{ "displayName": "Duration", "desc": true }]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r.source == \"iPhone\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> group(columns: [\"title\"])\n  |> sum()\n  |> group()\n  |> top(n: 10, columns: [\"_value\"])\n  |> keep(columns: [\"title\", \"_value\"])\n  |> rename(columns: {title: \"App\", _value: \"Duration\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top Apps (Mac)",
+      "gridPos": { "h": 12, "w": 8, "x": 16, "y": 5 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#56A64B", "value": 1800 },
+              { "color": "#37872D", "value": 3600 }
+            ]
+          },
+          "unit": "s",
+          "custom": {
+            "cellOptions": { "type": "gauge", "mode": "gradient" },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "App" },
+            "properties": [
+              { "id": "custom.width", "value": 180 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "footer": { "show": false },
+        "sortBy": [{ "displayName": "Duration", "desc": true }]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r.source == \"Mac\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> group(columns: [\"title\"])\n  |> sum()\n  |> group()\n  |> top(n: 10, columns: [\"_value\"])\n  |> keep(columns: [\"title\", \"_value\"])\n  |> rename(columns: {title: \"App\", _value: \"Duration\"})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Screen Time Over Time",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 17 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "s",
+          "custom": {
+            "drawStyle": "bars",
+            "barAlignment": 0,
+            "barWidthFactor": 0.8,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "lineWidth": 0,
+            "pointSize": 5,
+            "showPoints": "never",
+            "stacking": { "mode": "normal", "group": "A" },
+            "axisBorderShow": false,
+            "scaleDistribution": { "type": "linear" }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "iPhone" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Mac" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> group(columns: [\"source\"])\n  |> aggregateWindow(every: 1h, fn: sum, createEmpty: false)\n  |> yield(name: \"result\")",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Breakdown by Category",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
+      "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1800 },
+              { "color": "yellow", "value": 3600 },
+              { "color": "orange", "value": 7200 },
+              { "color": "red", "value": 14400 }
+            ]
+          },
+          "unit": "s",
+          "custom": {
+            "cellOptions": { "type": "gauge", "mode": "gradient" },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "category" },
+            "properties": [
+              { "id": "custom.width", "value": 150 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "footer": { "show": false },
+        "sortBy": [{ "displayName": "_value", "desc": true }]
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"screentime\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\")\n  |> filter(fn: (r) => r._field == \"duration\")\n  |> filter(fn: (r) => \"${source}\" == \"All\" or r.source == \"${source}\")\n  |> group(columns: [\"category\"])\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_value\"], desc: true)\n  |> keep(columns: [\"category\", \"_value\"])",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Category Reference",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 },
+      "collapsed": true,
+      "panels": [
+        {
+          "type": "text",
+          "title": "",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 34 },
+          "options": {
+            "mode": "markdown",
+            "content": "| Category | Apps |\n|----------|------|\n| **Social** | Discord, X, Instagram, Snapchat, TikTok, Reddit, WhatsApp, Facebook, Threads, Pinterest, LinkedIn, Telegram |\n| **Communication** | Messages, Phone, Microsoft Teams, Gmail, Outlook, Mail, WEB.DE, GMX, Contacts |\n| **Productivity** | Xcode, VS Code, Terminal, Finder, GitHub, Notes, Reminders, Calendar, Files, Calculator, Excel |\n| **Browser** | Chrome, Safari, ChatGPT, Google Maps, Google News, Google Drive |\n| **Media** | Spotify, Photos, Camera, YouTube, Music, Plex, Infuse, Letterboxd, PlayStation App |\n| **Utilities** | Settings, Clock, Weather, App Store, Home Assistant, Find My, Shortcuts, Speedtest, VPN apps |\n| **Shopping** | Amazon, DHL, Kleinanzeigen, Mydealz, Lidl Plus, AliExpress, eBay, Klarna, Lieferando |\n| **Finance** | PayPal, Revolut, N26, Finanzguru, Crypto Pro, Moss |\n| **System** | Lock Screen, Control Center, System folders |\n| **Other** | Apps not matching any category |"
+          }
+        }
+      ]
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": ["screentime", "apple", "productivity"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "All"
+        },
+        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB}" },
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"screentime\", tag: \"source\")",
+        "hide": 0,
+        "includeAll": true,
+        "allValue": "All",
+        "label": "Source",
+        "multi": false,
+        "name": "source",
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"screentime\", tag: \"source\")",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Apple Screen Time",
+  "uid": "apple-screentime",
+  "version": 7
+}

@@ -1,22 +1,56 @@
-# 📱 Apple Screen Time Exporter
-
-[![macOS](https://img.shields.io/badge/macOS-Ventura%20%7C%20Sonoma%20%7C%20Sequoia-blue?logo=apple)](https://www.apple.com/macos/)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Compatible-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-[![InfluxDB](https://img.shields.io/badge/InfluxDB-Compatible-22adf6?logo=influxdb&logoColor=white)](https://www.influxdata.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-> **Own your screen time data.** Collect, analyze, and visualize your Mac and iPhone usage — without Apple's restrictions.
+<h1 align="center">Apple Screen Time Exporter</h1>
 
 <p align="center">
-  <img src=".github/images/preview.png" alt="Apple Screen Time Exporter Preview" width="700">
+  <strong>Own your screen time data.</strong><br>
+  Collect, analyze, and visualize your Mac and iOS device usage — without Apple's restrictions.
 </p>
+
+<p align="center">
+  <a href="https://www.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-Sequoia%20%7C%20Tahoe-blue?logo=apple" alt="macOS"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-3776ab?logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-Compatible-41bdf5?logo=homeassistant&logoColor=white" alt="Home Assistant"></a>
+  <a href="https://www.influxdata.com/"><img src="https://img.shields.io/badge/InfluxDB-2.x-22adf6?logo=influxdb&logoColor=white" alt="InfluxDB"></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-Dashboard-F46800?logo=grafana&logoColor=white" alt="Grafana"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#features">Features</a> •
+  <a href="#device-configuration">Configuration</a> •
+  <a href="#grafana-dashboard">Dashboard</a> •
+  <a href="#troubleshooting">Troubleshooting</a>
+</p>
+
+<p align="center">
+  <img src=".github/images/preview.png" alt="Dashboard Preview" width="700">
+</p>
+
+---
+
+## Features
+
+- **Mac Data** — Reads directly from Apple's `knowledgeC.db` Screen Time database
+- **iOS Data** — Syncs iPhone and iPad via iCloud using [aw-import-screentime](https://github.com/ActivityWatch/aw-import-screentime)
+- **Multi-Device** — Track multiple iPhones, iPads with custom names
+- **Home Assistant** — Creates sensors for dashboards and automations
+- **InfluxDB + Grafana** — Long-term storage with beautiful visualizations
+- **Deduplication** — Run as often as you want, no duplicate entries
+- **Automation** — Built-in launchd support for scheduled collection
+
+---
+
+## How It Works
 
 ```mermaid
 flowchart LR
     subgraph Sources
-        iPhone[📱 iPhone]
-        Mac[🖥️ Mac]
+        iPhone[iPhone]
+        iPad[iPad]
+        Mac[Mac]
     end
 
     subgraph Collection
@@ -25,58 +59,34 @@ flowchart LR
         Collector[collector.py]
     end
 
-    subgraph Storage
+    subgraph Export
         CSV[(screentime.csv)]
+        Exporter[exporter.py]
     end
 
-    subgraph Export
-        Exporter[exporter.py]
-        HA[🏠 Home Assistant]
-        Influx[📊 InfluxDB]
-        Grafana[📈 Grafana]
+    subgraph Destinations
+        HA[Home Assistant]
+        Influx[InfluxDB]
+        Grafana[Grafana]
     end
 
     iPhone --> Biome --> Collector
+    iPad --> Biome
     Mac --> KnowledgeDB --> Collector
-    Collector --> CSV
-    CSV --> Exporter
+    Collector --> CSV --> Exporter
     Exporter --> HA
     Exporter --> Influx --> Grafana
 ```
 
 ---
 
-## 📑 Table of Contents
-
-- [Features](#-features)
-- [Quick Start](#-quick-start)
-- [Home Assistant Integration](#-home-assistant-integration)
-- [Automation with launchd](#-automation-with-launchd)
-- [Data Schema](#-data-schema)
-- [Project Structure](#-project-structure)
-- [Troubleshooting](#-troubleshooting)
-- [Credits](#-credits)
-
----
-
-## ✨ Features
-
-- **🖥️ Mac Data** — Reads directly from Apple's `knowledgeC.db` Screen Time database
-- **📱 iPhone Data** — Syncs via iCloud using [aw-import-screentime](https://github.com/ActivityWatch/aw-import-screentime)
-- **🏠 Home Assistant** — Creates sensors for dashboards and automations
-- **📊 InfluxDB + Grafana** — Long-term storage and beautiful visualizations
-- **🔄 Deduplication** — Run as often as you want, no duplicate entries
-- **⏰ Automation** — Built-in launchd support for scheduled collection
-
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - macOS Ventura, Sonoma, or Sequoia
 - Python 3.10+
-- iPhone synced via iCloud
+- iOS devices synced via iCloud
 - Terminal with **Full Disk Access**
 
 ### Installation
@@ -86,17 +96,14 @@ flowchart LR
 git clone https://github.com/nichtlegacy/apple-screentime-exporter.git
 cd apple-screentime-exporter
 
-# Install aw-import-screentime (for iPhone data)
+# Install aw-import-screentime (for iOS data)
 git clone https://github.com/ActivityWatch/aw-import-screentime.git
-cd aw-import-screentime
-python3 -m venv .venv
-.venv/bin/pip install -e .
-cd ..
+cd aw-import-screentime && python3 -m venv .venv && .venv/bin/pip install -e . && cd ..
 
 # Install Python dependencies
 pip3 install python-dotenv pandas requests
 
-# Copy and configure environment
+# Configure
 cp .env.example .env
 ```
 
@@ -105,53 +112,6 @@ cp .env.example .env
 1. Open **System Settings → Privacy & Security → Full Disk Access**
 2. Add **Terminal.app** (from `/Applications/Utilities/`)
 3. Restart Terminal
-
-### Configure
-
-Edit `.env` with your settings:
-
-<details>
-<summary><strong>Finding your iPhone Device ID</strong></summary>
-
-If you have multiple Apple devices, you'll see multiple Device IDs:
-
-```bash
-cd aw-import-screentime && .venv/bin/aw-import-screentime devices
-
-# Output:
-# Found 4 device(s) for platform 2
-# [{"device_id": "CA06AED8-..."}, {"device_id": "51FBF7C3-..."}, ...]
-```
-
-**To find the correct one:**
-
-```bash
-# Test each device ID to see which has data
-.venv/bin/aw-import-screentime events preview --device DEVICE-ID-HERE --since 1d
-
-# The correct iPhone will return events with apps you recognize
-# Example output with TikTok, WhatsApp, Instagram = your iPhone ✓
-# Empty or unfamiliar apps = wrong device (old iPhone, iPad, etc.)
-```
-
-**Pro tip:** The device with the most recent data and apps you use daily is your current iPhone.
-
-</details>
-
-#### Example .env
-
-```env
-DEVICE_ID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-
-HA_URL=http://homeassistant.local:8123
-HA_TOKEN=your-long-lived-access-token
-
-# Optional: InfluxDB
-INFLUX_URL=http://localhost:8086
-INFLUX_TOKEN=your-influx-token
-INFLUX_ORG=home
-INFLUX_BUCKET=screentime
-```
 
 ### Run
 
@@ -166,101 +126,173 @@ python3 run.py
 === Screen Time Collection - 2026-02-08T14:30:00 ===
 
 First run - extracting all available data
-[14:30:01] Extracting iPhone data...
-[iPhone] 847 new entries found
+[14:30:01] Extracting iPhone 15 Pro data...
+[iPhone 15 Pro] 847 new entries found
 [14:30:03] Extracting Mac data...
 [Mac] 1203 new entries found
 
-  iPhone: 847 Events
-  Mac:    1203 Events
+  iPhone 15 Pro: 847 Events
+  Mac: 1203 Events
 
 Success: 2050 NEW entries added.
 
 === Screen Time Export - 2026-02-08T14:30:05 ===
-
-First export - all data will be exported
-Loaded data: 2050 new entries
 
 --- InfluxDB Export ---
 [InfluxDB] 2050 data points written
 
 --- Home Assistant Export ---
 [HA] sensor.screentime_total = 245.5
-[HA] sensor.screentime_iphone = 180.0
+[HA] sensor.screentime_iphone_15_pro = 180.0
 [HA] sensor.screentime_mac = 65.5
-[HA] sensor.screentime_top_app = Chrome
 
-Export completed. Last timestamp: 2026-02-08T14:30:00
+Export completed.
 ```
 
 </details>
 
 ---
 
-## 🏠 Home Assistant Integration
+## Device Configuration
 
-After running the export, these sensors become available:
+### Finding Device IDs
+
+```bash
+cd aw-import-screentime && .venv/bin/aw-import-screentime devices
+```
+
+Test each device to identify it:
+
+```bash
+.venv/bin/aw-import-screentime events preview --device DEVICE-ID-HERE --since 1d
+```
+
+### Single Device
+
+```env
+DEVICE_ID=CA06AED8-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+```
+
+### Multiple Devices
+
+```env
+# Format: Name:UUID,Name:UUID
+DEVICES=iPhone 15 Pro:CA06AED8-...,iPad Pro:51FBF7C3-...,iPhone Work:7B2A9F1C-...
+```
+
+Each device appears separately in the dashboard and Home Assistant.
+
+### Full Configuration
+
+```env
+# === iOS Devices ===
+DEVICE_ID=CA06AED8-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+# Or for multiple: DEVICES=iPhone 15 Pro:UUID1,iPad:UUID2
+
+# === Home Assistant ===
+HA_URL=http://homeassistant.local:8123
+HA_TOKEN=your-long-lived-access-token
+
+# === InfluxDB ===
+INFLUX_URL=http://localhost:8086
+INFLUX_TOKEN=your-influx-token
+INFLUX_ORG=home
+INFLUX_BUCKET=screentime
+```
+
+---
+
+## Home Assistant Integration
+
+Sensors are created dynamically based on your configured devices:
 
 | Sensor | Description |
 |--------|-------------|
 | `sensor.screentime_total` | Total screen time today (minutes) |
-| `sensor.screentime_iphone` | iPhone usage (minutes) |
-| `sensor.screentime_mac` | Mac usage (minutes) |
+| `sensor.screentime_<device>` | Per-device usage (e.g., `screentime_iphone_15_pro`) |
 | `sensor.screentime_top_app` | Most used app today |
-| `sensor.screentime_by_category` | Breakdown by category (attributes) |
-| `sensor.screentime_top_apps` | Top 10 apps (attributes) |
+| `sensor.screentime_by_category` | Breakdown by category |
+| `sensor.screentime_top_apps` | Top 10 apps |
 
 <details>
 <summary><strong>Creating a Home Assistant Token</strong></summary>
 
-1. Open Home Assistant
-2. Click your profile (bottom left) → **Security**
-3. Under **Long-lived access tokens**, click **Create Token**
-4. Name it (e.g., "screentime") and copy the token
+1. Open Home Assistant → Profile → **Security**
+2. Under **Long-lived access tokens**, click **Create Token**
+3. Name it and copy the token to your `.env`
 
 </details>
 
 ---
 
-## ⏰ Automation with launchd
+## InfluxDB Setup
 
-Run the exporter every 6 hours automatically:
+<details>
+<summary><strong>Setting up InfluxDB 2.x</strong></summary>
+
+1. Install InfluxDB 2.x (Docker, Unraid, or native)
+2. Create a bucket named `screentime`
+3. Generate an API token with read/write access
+4. Add credentials to `.env`
+
+</details>
+
+---
+
+## Grafana Dashboard
+
+<p align="center">
+  <img src=".github/images/preview.png" alt="Grafana Dashboard" width="700">
+</p>
+
+### Import
+
+1. Open Grafana → **Dashboards** → **Import**
+2. Upload `grafana/screentime-dashboard.json`
+3. Select your InfluxDB datasource
+
+### Panels
+
+| Panel | Description |
+|-------|-------------|
+| **Total / Per-Device** | Screen time stats for each device |
+| **Top Apps** | Top 10 apps overall and per device |
+| **By Category** | Social, Productivity, Media, etc. |
+| **Timeline** | Hourly usage with device stacking |
+
+The **Source** filter dynamically loads all devices from your data.
+
+---
+
+## Automation
+
+Run automatically every 6 hours with launchd:
 
 ```bash
-# Copy and customize the plist
 cp examples/launchd.plist ~/Library/LaunchAgents/com.apple-screentime-exporter.plist
-nano ~/Library/LaunchAgents/com.apple-screentime-exporter.plist  # Update paths
-
-# Install (modern syntax)
+# Edit paths in the plist file
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.apple-screentime-exporter.plist
-
-# Verify
-launchctl list | grep screentime
 ```
-
-> **Important:** For launchd to work, add your Python binary to Full Disk Access.
-> Find your path with `which python3` (commonly `/Library/Frameworks/Python.framework/Versions/3.x/bin/python3`)
-
-### Useful Commands
 
 | Action | Command |
 |--------|---------|
 | Run manually | `python3 run.py` |
 | Trigger now | `launchctl kickstart gui/$(id -u)/com.apple-screentime-exporter` |
-| Stop automation | `launchctl bootout gui/$(id -u)/com.apple-screentime-exporter` |
+| Stop | `launchctl bootout gui/$(id -u)/com.apple-screentime-exporter` |
 | View logs | `tail -f logs/launchd.log` |
-| List devices | `cd aw-import-screentime && .venv/bin/aw-import-screentime devices` |
+
+> **Note:** Add your Python binary to Full Disk Access for launchd to work.
 
 ---
 
-## 📊 Data Schema
+## Data Schema
 
-### Local CSV
+### CSV
 
 ```csv
 timestamp,app,title,duration,source
-2026-02-08T14:30:00+01:00,com.google.Chrome,Chrome,45.5,mac
-2026-02-08T14:35:00+01:00,com.zhiliaoapp.musically,TikTok,120.0,iphone
+2026-02-08T14:30:00+01:00,com.google.Chrome,Chrome,45.5,Mac
+2026-02-08T14:35:00+01:00,com.zhiliaoapp.musically,TikTok,120.0,iPhone 15 Pro
 ```
 
 ### InfluxDB
@@ -269,57 +301,50 @@ timestamp,app,title,duration,source
 Measurement: screentime
 Tags: source, app, title, category
 Fields: duration (seconds)
-Timestamp: Session start
 ```
 
-**Categories:** `social`, `productivity`, `browser`, `communication`, `media`, `utilities`, `shopping`, `system`, `other`
+**Categories:** Social, Productivity, Browser, Communication, Media, Utilities, Shopping, Finance, System, Other
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 apple-screentime-exporter/
-├── .github/
-│   └── images/
-│       └── preview.png           # Project preview image
+├── grafana/
+│   └── screentime-dashboard.json
 ├── src/
-│   ├── collector.py              # Collects data from Mac + iPhone
-│   └── exporter.py               # Exports to Home Assistant + InfluxDB
+│   ├── config.py          # App mappings & categories
+│   ├── collector.py       # Data collection
+│   └── exporter.py        # HA + InfluxDB export
 ├── examples/
-│   └── launchd.plist             # launchd template for automation
-├── data/                         # Collected data (gitignored)
-│   └── screentime.csv
-├── logs/                         # Log files (gitignored)
-├── run.py                        # Main entry point
-├── .env.example                  # Configuration template
-├── .gitignore
-├── LICENSE
-└── README.md
+│   └── launchd.plist
+├── run.py
+└── .env.example
 ```
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
 | `knowledgeC.db not readable` | Grant Full Disk Access to Terminal |
-| `Device not found` | Ensure iPhone is synced with the same iCloud account |
-| No iPhone data | Check if `~/Library/Biome/` contains data |
-| launchd not starting | Verify paths in plist and Full Disk Access for Python |
-| `DEVICE_ID not set` | Run `aw-import-screentime devices` to find your ID |
+| `Device not found` | Ensure device is synced with iCloud |
+| No iOS data | Check if `~/Library/Biome/` exists |
+| launchd not working | Add Python to Full Disk Access |
+| No devices configured | Set `DEVICE_ID` or `DEVICES` in `.env` |
 
 ---
 
-## 🙏 Credits
+## Credits
 
 - Inspired by [Boaz Sobrado's blog post](https://boazsobrado.com/blog/2025/02/03/how-i-built-a-personal-screen-time-tracker-for-mac-and-iphone-using-claude/)
-- iPhone data extraction via [aw-import-screentime](https://github.com/ActivityWatch/aw-import-screentime)
+- iOS data via [aw-import-screentime](https://github.com/ActivityWatch/aw-import-screentime)
 - Built with [Claude Code](https://claude.ai/code)
 
 ---
 
-## 📄 License
-
-MIT © 2026
+<p align="center">
+  <strong>MIT License</strong> © 2026
+</p>

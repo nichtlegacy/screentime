@@ -14,11 +14,12 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
+from config import APP_MAP, TITLE_NORMALIZE, normalize_title
+
 # Load .env from parent directory
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # --- CONFIGURATION ---
-DEVICE_ID = os.getenv("DEVICE_ID", "")
 SCRIPT_DIR = Path(__file__).parent.parent
 OUTPUT_CSV = SCRIPT_DIR / "data" / "screentime.csv"
 LAST_TIMESTAMP_FILE = SCRIPT_DIR / "data" / "screentime.csv.last"
@@ -30,77 +31,30 @@ KNOWLEDGE_DB = Path.home() / "Library" / "Application Support" / "Knowledge" / "
 # Apple Epoch offset (seconds between 1970-01-01 and 2001-01-01)
 APPLE_EPOCH_OFFSET = 978307200
 
-# Mapping for known apps (bundle_id -> display name)
-APP_MAP = {
-    # Social
-    "com.hammerandchisel.discord": "Discord",
-    "com.hnc.Discord": "Discord",
-    "com.atebits.Tweetie2": "X (Twitter)",
-    "com.burbn.instagram": "Instagram",
-    "com.toyopagroup.picaboo": "Snapchat",
-    "com.zhiliaoapp.musically": "TikTok",
-    "com.reddit.Reddit": "Reddit",
-    "net.whatsapp.WhatsApp": "WhatsApp",
-    "net.whatsapp.WhatsAppSMB": "WhatsApp Business",
 
-    # Communication
-    "com.apple.MobileSMS": "Messages",
-    "com.apple.mobilephone": "Phone",
-    "com.apple.InCallService": "Phone Call",
-    "com.microsoft.skype.teams": "Microsoft Teams",
-    "com.google.Gmail": "Gmail",
-    "de.web.mobilenavigator": "WEB.DE Mail",
-    "com.microsoft.Office.Outlook": "Outlook",
+def parse_devices() -> list[tuple[str, str]]:
+    """
+    Parses device configuration from .env.
+    Returns: List of (device_name, device_id) tuples
+    """
+    devices_str = os.getenv("DEVICES", "")
+    if devices_str:
+        # Format: "Name1:UUID1,Name2:UUID2"
+        devices = []
+        for entry in devices_str.split(","):
+            entry = entry.strip()
+            if ":" in entry:
+                name, uuid = entry.split(":", 1)
+                devices.append((name.strip(), uuid.strip()))
+        return devices
 
-    # Productivity
-    "com.apple.dt.Xcode": "Xcode",
-    "com.microsoft.VSCode": "VS Code",
-    "com.apple.Terminal": "Terminal",
-    "com.apple.finder": "Finder",
-    "com.google.antigravity": "Antigravity",
-    "com.personio": "Personio",
-    "com.github.stormbreaker.prod": "GitHub",
+    # Fallback: Legacy DEVICE_ID
+    device_id = os.getenv("DEVICE_ID", "")
+    if device_id:
+        return [("iPhone", device_id)]
 
-    # Browser
-    "com.google.Chrome": "Chrome",
-    "com.google.chrome.ios": "Chrome",
-    "com.apple.Safari": "Safari",
+    return []
 
-    # Media
-    "com.spotify.client": "Spotify",
-    "com.apple.mobileslideshow": "Photos",
-    "com.apple.camera": "Camera",
-
-    # Utilities
-    "com.google.gemini": "Google Gemini",
-    "io.robbie.HomeAssistant": "Home Assistant",
-    "com.microsoft.azureauthenticator": "MS Authenticator",
-    "com.apple.mobiletimer": "Clock",
-    "com.apple.mobilecal": "Calendar",
-    "com.apple.weather": "Weather",
-    "com.apple.Preferences": "Settings",
-    "com.apple.systempreferences": "System Settings",
-    "com.apple.AppStore": "App Store",
-    "com.ubnt.unifiac": "UniFi",
-
-    # Shopping
-    "com.amazon.AmazonDE": "Amazon",
-    "de.deutschepost.dhl": "DHL",
-    "com.ebaykleinanzeigen.ebc": "Kleinanzeigen",
-    "com.6minutesmedia.mydealz": "Mydealz",
-    "com.lidl.eci.lidl.plus": "Lidl Plus",
-
-    # System (often ignorable)
-    "com.apple.springboard.home-screen-open-folder": "System: Folder",
-    "com.apple.springboard.today-view": "System: Today View",
-    "com.apple.control-center": "Control Center",
-    "com.apple.SleepLockScreen": "Lock Screen",
-    "com.apple.ClockAngel": "Clock Widget",
-    "com.apple.iphonesimulator": "iPhone Simulator",
-
-    # Other
-    "nichtlegacy.your-spotify": "Your_Spotify",
-}
 
 def get_app_title(bundle_id):
     """Returns a display name for the app with intelligent fallback."""
@@ -180,7 +134,7 @@ def get_mac_data(last_created_at):
                     "app": app,
                     "title": title,
                     "duration": round(usage, 2),
-                    "source": "mac",
+                    "source": "Mac",
                     "_created_at": created_at
                 })
 
@@ -190,21 +144,20 @@ def get_mac_data(last_created_at):
         print(f"[Mac] Error: {e}")
         return []
 
-def get_iphone_data(last_created_at):
-    """Extracts iPhone Screen Time via aw-import-screentime."""
-    if not DEVICE_ID:
-        print("[iPhone] DEVICE_ID not set in .env - skipping")
-        print("[iPhone] Tip: cd aw-import-screentime && .venv/bin/aw-import-screentime devices")
+def get_mobile_data(device_name, device_id, last_created_at):
+    """Extracts mobile Screen Time via aw-import-screentime."""
+    if not device_id:
+        print(f"[{device_name}] Device ID not set - skipping")
         return []
 
     if not AW_BIN.exists():
-        print(f"[iPhone] aw-import-screentime nicht gefunden: {AW_BIN}")
+        print(f"[{device_name}] aw-import-screentime not found: {AW_BIN}")
         return []
 
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Extracting iPhone data...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Extracting {device_name} data...")
 
     # Always query 28 days, deduplication happens via created_at
-    cmd = [str(AW_BIN), "events", "preview", "--device", DEVICE_ID, "--since", "28d"]
+    cmd = [str(AW_BIN), "events", "preview", "--device", device_id, "--since", "28d"]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=300)
@@ -234,19 +187,22 @@ def get_iphone_data(last_created_at):
                 if title == "unknown" or not title:
                     title = APP_MAP.get(bundle_id, bundle_id.split(".")[-1])
 
+                # Normalize long App Store names
+                title = normalize_title(title)
+
                 events.append({
                     "timestamp": ts,
                     "app": bundle_id,
                     "title": title,
                     "duration": round(duration, 2),
-                    "source": "iphone",
+                    "source": device_name,
                     "_created_at": created_at
                 })
 
-        print(f"[iPhone] {len(events)} new entries found")
+        print(f"[{device_name}] {len(events)} new entries found")
         return events
     except Exception as e:
-        print(f"[iPhone] Error: {e}")
+        print(f"[{device_name}] Error: {e}")
         return []
 
 def save_to_csv(events):
@@ -281,15 +237,31 @@ if __name__ == "__main__":
     else:
         print("First run - extracting all available data")
 
-    # Collect from both sources
-    iphone_events = get_iphone_data(last_ts)
+    # Parse configured devices
+    devices = parse_devices()
+    if not devices:
+        print("\nNo mobile devices configured.")
+        print("Tip: Set DEVICE_ID or DEVICES in .env")
+        print("     Run: cd aw-import-screentime && .venv/bin/aw-import-screentime devices")
+
+    # Collect from all mobile devices
+    all_mobile_events = []
+    for device_name, device_id in devices:
+        events = get_mobile_data(device_name, device_id, last_ts)
+        all_mobile_events.extend(events)
+
+    # Collect Mac data
     mac_events = get_mac_data(last_ts)
 
     # Combine and sort by timestamp
-    all_events = iphone_events + mac_events
+    all_events = all_mobile_events + mac_events
     all_events.sort(key=lambda x: x["timestamp"])
 
-    print(f"\n  iPhone: {len(iphone_events)} Events")
-    print(f"  Mac:    {len(mac_events)} Events")
+    # Print summary
+    print()
+    for device_name, device_id in devices:
+        count = sum(1 for e in all_mobile_events if e["source"] == device_name)
+        print(f"  {device_name}: {count} Events")
+    print(f"  Mac: {len(mac_events)} Events")
 
     save_to_csv(all_events)
