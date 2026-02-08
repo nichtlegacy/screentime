@@ -93,8 +93,8 @@ flowchart LR
 
 ```bash
 # Clone the repository
-git clone https://github.com/nichtlegacy/apple-screentime-exporter.git
-cd apple-screentime-exporter
+git clone https://github.com/nichtlegacy/screentime.git
+cd screentime
 
 # Install aw-import-screentime (for iOS data)
 git clone https://github.com/ActivityWatch/aw-import-screentime.git
