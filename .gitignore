@@ -1,0 +1,30 @@
+# Credentials
+.env
+
+# Data (keep locally, don't commit)
+data/
+*.csv
+*.csv.last
+.last_export_timestamp
+
+# Logs
+logs/
+*.log
+*.err
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# aw-import-screentime (cloned separately)
+aw-import-screentime/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+.claude/

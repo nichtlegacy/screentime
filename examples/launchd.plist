@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.apple-screentime-exporter</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <!-- Update this path to your Python installation (run: which python3) -->
+        <string>/Library/Frameworks/Python.framework/Versions/3.12/bin/python3</string>
+        <!-- Update this path to your installation directory -->
+        <string>/Users/YOUR-USERNAME/apple-screentime-exporter/run.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <!-- Update this path to your installation directory -->
+    <string>/Users/YOUR-USERNAME/apple-screentime-exporter</string>
+
+    <!-- Run every 6 hours (21600 seconds) -->
+    <key>StartInterval</key>
+    <integer>21600</integer>
+
+    <!-- Run immediately when loaded -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Background task settings -->
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>Nice</key>
+    <integer>10</integer>
+
+    <key>LowPriorityIO</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR-USERNAME/apple-screentime-exporter/logs/launchd.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR-USERNAME/apple-screentime-exporter/logs/launchd.err</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/Library/Frameworks/Python.framework/Versions/3.12/bin</string>
+    </dict>
+</dict>
+</plist>
