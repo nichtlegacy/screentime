@@ -341,7 +341,6 @@ apple-screentime-exporter/
 
 - Inspired by [Boaz Sobrado's blog post](https://boazsobrado.com/blog/2025/02/03/how-i-built-a-personal-screen-time-tracker-for-mac-and-iphone-using-claude/)
 - iOS data via [aw-import-screentime](https://github.com/ActivityWatch/aw-import-screentime)
-- Built with [Claude Code](https://claude.ai/code)
 
 ---
 
