@@ -1,5 +1,6 @@
 <!doctype html>
-<!-- Social preview (1200x630), rendered to site/og.png by build_site_images.py. -->
+<!-- Social previews, rendered by build_site_images.py: site/og.png (1200x630)
+     and, with #1280x640, the GitHub social preview. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -7,7 +8,7 @@
   @font-face { font-family: Geist; src: url(../site/fonts/Geist-Variable.woff2) format("woff2"); font-weight: 100 900; }
   @font-face { font-family: "Geist Mono"; src: url(../site/fonts/GeistMono-Variable.woff2) format("woff2"); font-weight: 100 900; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  html, body { margin: 0; width: var(--w, 1200px); height: var(--h, 630px); overflow: hidden; }
   body {
     position: relative;
     font-family: Geist, sans-serif; color: #f4f4f7;
@@ -26,7 +27,7 @@
   .url { position: absolute; left: 72px; bottom: 52px; font-family: "Geist Mono", monospace; font-size: 19px; color: #8a8a9c; }
   .url b { color: #b9adff; font-weight: 500; }
   .window {
-    position: absolute; left: 618px; top: 92px; width: 640px; height: 600px;
+    position: absolute; right: -58px; top: 92px; width: 640px; height: 600px;
     border-radius: 14px; overflow: hidden; background: #111217;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 40px 100px -20px rgba(0,0,0,0.9), 0 0 120px -30px rgba(157,140,255,0.5);
   }
@@ -49,5 +50,12 @@
     <div class="bar"><i></i><i></i><i></i><span>Screen Time · Grafana</span></div>
     <div class="view"><img src="../.github/images/hero.png" alt=""></div>
   </div>
+<script>
+  const size = location.hash.match(/^#(\d+)x(\d+)$/);
+  if (size) {
+    document.documentElement.style.setProperty("--w", `${size[1]}px`);
+    document.documentElement.style.setProperty("--h", `${size[2]}px`);
+  }
+</script>
 </body>
 </html>

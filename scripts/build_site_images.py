@@ -122,8 +122,11 @@ def icons() -> None:
 
 
 def og() -> None:
-    """Render scripts/og.html at 2x in Chromium and downsample to 1200x630.
+    """Render scripts/og.html at 2x in Chromium and downsample.
 
+    Writes site/og.png (1200x630, Open Graph) and
+    .github/images/social-preview.png (1280x640, upload it by hand under the
+    GitHub repo's Settings → General → Social preview; there is no API).
     Needs Playwright's Chromium (``playwright install chromium``) or a
     Chromium binary in PLAYWRIGHT_CHROMIUM.
     """
@@ -131,23 +134,25 @@ def og() -> None:
 
     from playwright.sync_api import sync_playwright
 
+    targets = [(SITE / "og.png", 1200, 630), (SRC / "social-preview.png", 1280, 640)]
     with sync_playwright() as p:
         browser = p.chromium.launch(
             executable_path=os.environ.get("PLAYWRIGHT_CHROMIUM") or None
         )
-        page = browser.new_page(
-            viewport={"width": 1200, "height": 630}, device_scale_factor=2
-        )
-        page.goto((ROOT / "scripts" / "og.html").as_uri())
-        page.wait_for_load_state("networkidle")
-        page.evaluate("document.fonts.ready")
-        shot = page.screenshot()
+        for target, w, h in targets:
+            page = browser.new_page(
+                viewport={"width": w, "height": h}, device_scale_factor=2
+            )
+            page.goto(f"{(ROOT / 'scripts' / 'og.html').as_uri()}#{w}x{h}")
+            page.wait_for_load_state("networkidle")
+            page.evaluate("document.fonts.ready")
+            shot = page.screenshot()
+            Image.open(io.BytesIO(shot)).convert("RGB").resize(
+                (w, h), Image.LANCZOS
+            ).save(target, optimize=True)
+            size = target.stat().st_size / 1024
+            print(f"{target.name:18} {w}x{h}  {size:6.1f} KiB")
         browser.close()
-    target = SITE / "og.png"
-    Image.open(io.BytesIO(shot)).convert("RGB").resize((1200, 630), Image.LANCZOS).save(
-        target, optimize=True
-    )
-    print(f"og.png             1200x630  {target.stat().st_size / 1024:6.1f} KiB")
 
 
 if __name__ == "__main__":
