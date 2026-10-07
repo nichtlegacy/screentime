@@ -222,8 +222,7 @@ def lookup_missing(conn: sqlite3.Connection, country: str | None) -> set[str]:
     found = local_lookup(candidates)
     checked = [b for b in candidates if b.lower() in found]
     remaining = [b for b in candidates if b.lower() not in found]
-    if country is None:
-        checked = candidates  # local misses are cached too
+    if country is None:  # misses stay open for the App Store once it is on
         remaining = []
     for start in range(0, len(remaining), BATCH):
         batch = remaining[start : start + BATCH]

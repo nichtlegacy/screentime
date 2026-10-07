@@ -15,6 +15,7 @@ from screentime.db import connect, init_db
 from screentime.importer import sync_sources
 from screentime.sources import Device, UsageEvent
 from screentime.taxonomy import APPS, CATEGORIES, GENRES, classify, guess, short_name
+from screentime.taxonomy import local_lookup as real_local_lookup
 
 PHONE = Device("phone-1", "iPhone", "iphone", "fake")
 
@@ -303,6 +304,7 @@ def test_installed_mac_apps_are_named_before_the_app_store(conn, tmp_path, monke
             "LSApplicationCategoryType": "public.app-category.role-playing-games",
         },
     )
+    monkeypatch.setattr(taxonomy, "local_lookup", real_local_lookup)
     monkeypatch.setattr(taxonomy.sys, "platform", "darwin")
     monkeypatch.setattr(
         taxonomy.subprocess,

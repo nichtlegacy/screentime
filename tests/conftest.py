@@ -29,5 +29,6 @@ def offline_taxonomy(monkeypatch):
         raise OSError("network disabled in tests")
 
     monkeypatch.setattr(taxonomy.requests, "get", no_network)
+    monkeypatch.setattr(taxonomy, "local_lookup", lambda bundle_ids: {})  # no Spotlight
     monkeypatch.setattr(taxonomy, "OVERRIDES", {})
     monkeypatch.setattr(taxonomy, "LOOKUP", {})

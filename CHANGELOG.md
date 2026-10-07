@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Without the App Store lookup, apps that Spotlight could not name were
+  remembered for a week, so turning the lookup on later skipped them.
+
 ## [2.0.0] - 2026-10-07
 
 v2 is a rewrite: one installed `screentime` command instead of scripts, a
@@ -96,5 +103,6 @@ First release.
 - InfluxDB 2 export (measurement `screentime`) and a Grafana dashboard.
 - Example launchd agent for scheduled runs.
 
+[Unreleased]: https://github.com/nichtlegacy/screentime/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/nichtlegacy/screentime/releases/tag/v2.0.0
 [1.0.0]: https://github.com/nichtlegacy/screentime/releases/tag/v1.0.0
