@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Screen Time Exporter — Apple Screen Time in your own database</title>
+<meta name="description" content="Open-source macOS tool that exports Apple Screen Time from iPhone, iPad and Mac to local SQLite, Grafana, Home Assistant and AI assistants over MCP.">
+<link rel="canonical" href="https://screentime.nichtlegacy.com/">
+<meta name="author" content="nichtlegacy">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#09090d">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Screen Time Exporter">
+<meta property="og:locale" content="en_US">
+<meta property="og:url" content="https://screentime.nichtlegacy.com/">
+<meta property="og:title" content="Screen Time Exporter — your Screen Time, in your own database">
+<meta property="og:description" content="Apple Screen Time from iPhone, iPad and Mac, read on your Mac every 15 minutes, kept in local SQLite and sent to Grafana, Home Assistant, the terminal and MCP.">
+<meta property="og:image" content="https://screentime.nichtlegacy.com/og.png">
+<meta property="og:image:secure_url" content="https://screentime.nichtlegacy.com/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Screen Time Exporter logo and the words “Your Screen Time, in your own database.” beside the Grafana dashboard with demo data.">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Screen Time Exporter — your Screen Time, in your own database">
+<meta name="twitter:description" content="Apple Screen Time from iPhone, iPad and Mac in local SQLite, Grafana, Home Assistant, the terminal and MCP.">
+<meta name="twitter:image" content="https://screentime.nichtlegacy.com/og.png">
+<meta name="twitter:image:alt" content="The Screen Time Exporter logo and the words “Your Screen Time, in your own database.” beside the Grafana dashboard with demo data.">
+
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+
+<link rel="preload" as="font" href="fonts/Geist-Variable.woff2" type="font/woff2" crossorigin>
+<link rel="preload" as="image" href="screenshots/dashboard.webp" type="image/webp" fetchpriority="high">
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://screentime.nichtlegacy.com/#website",
+      "url": "https://screentime.nichtlegacy.com/",
+      "name": "Screen Time Exporter",
+      "description": "Open-source exporter for Apple Screen Time on macOS.",
+      "inLanguage": "en",
+      "publisher": { "@id": "https://screentime.nichtlegacy.com/#author" },
+      "about": { "@id": "https://screentime.nichtlegacy.com/#app" }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://screentime.nichtlegacy.com/#webpage",
+      "url": "https://screentime.nichtlegacy.com/",
+      "name": "Screen Time Exporter — Apple Screen Time in your own database",
+      "isPartOf": { "@id": "https://screentime.nichtlegacy.com/#website" },
+      "about": { "@id": "https://screentime.nichtlegacy.com/#app" },
+      "primaryImageOfPage": { "@id": "https://screentime.nichtlegacy.com/#primaryimage" },
+      "datePublished": "2026-10-07",
+      "dateModified": "__BUILD_DATE__",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "ImageObject",
+      "@id": "https://screentime.nichtlegacy.com/#primaryimage",
+      "url": "https://screentime.nichtlegacy.com/og.png",
+      "contentUrl": "https://screentime.nichtlegacy.com/og.png",
+      "width": 1200,
+      "height": 630,
+      "caption": "The Screen Time Exporter logo beside the Grafana dashboard with demo data."
+    },
+    {
+      "@type": "Person",
+      "@id": "https://screentime.nichtlegacy.com/#author",
+      "name": "nichtlegacy",
+      "url": "https://github.com/nichtlegacy",
+      "sameAs": ["https://github.com/nichtlegacy"]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://screentime.nichtlegacy.com/#app",
+      "name": "Screen Time Exporter",
+      "alternateName": ["screentime-exporter", "screentime"],
+      "url": "https://screentime.nichtlegacy.com/",
+      "description": "Reads Apple Screen Time for iPhone, iPad and Mac on the Mac (Biome and knowledgeC.db) every 15 minutes, keeps every session in a local SQLite database and exports to InfluxDB and Grafana, Home Assistant, terminal reports and a read-only MCP server.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS",
+      "softwareRequirements": "Python 3.11 or later (installed by uv)",
+      "softwareVersion": "__VERSION__",
+      "datePublished": "2026-10-07",
+      "inLanguage": "en",
+      "image": { "@id": "https://screentime.nichtlegacy.com/#primaryimage" },
+      "featureList": [
+        "iPhone and iPad usage via iCloud, plus the Mac itself",
+        "Every app session in a local SQLite database",
+        "Late night (00:00–06:00), deep night (03:00–06:00), bedtime and wake-up",
+        "Names and categories for 270+ bundle ids; the rest from the installed Mac app or the App Store",
+        "Grafana dashboard and Docker Compose stack with InfluxDB",
+        "Home Assistant sensors over the REST API",
+        "Terminal reports and CSV or JSON export",
+        "Read-only MCP server for Claude, Codex and Cursor"
+      ],
+      "downloadUrl": "https://github.com/nichtlegacy/screentime",
+      "installUrl": "https://github.com/nichtlegacy/screentime/blob/main/docs/setup.md",
+      "releaseNotes": "https://github.com/nichtlegacy/screentime/blob/main/CHANGELOG.md",
+      "codeRepository": "https://github.com/nichtlegacy/screentime",
+      "discussionUrl": "https://github.com/nichtlegacy/screentime/issues",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "screenshot": [
+        {
+          "@type": "ImageObject",
+          "url": "https://screentime.nichtlegacy.com/screenshots/dashboard.webp",
+          "caption": "The Grafana dashboard with demo data"
+        },
+        {
+          "@type": "ImageObject",
+          "url": "https://screentime.nichtlegacy.com/screenshots/summary.webp",
+          "caption": "screentime summary in the terminal, with demo data"
+        }
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://github.com/nichtlegacy/screentime"
+      },
+      "author": { "@id": "https://screentime.nichtlegacy.com/#author" },
+      "maintainer": { "@id": "https://screentime.nichtlegacy.com/#author" },
+      "mainEntityOfPage": { "@id": "https://screentime.nichtlegacy.com/#webpage" }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-github" viewBox="0 0 16 16">
+    <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+  </symbol>
+  <!-- The logo glyph without its tile: a 24-hour dial, midnight at the top,
+       the 00–06 quarter lit, three bars of use. -->
+  <symbol id="i-mark" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2.2"/>
+    <path d="M12 3.4a8.6 8.6 0 0 1 8.6 8.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    <g fill="currentColor"><rect x="8.1" y="11.6" width="2" height="4.6" rx="1"/><rect x="11" y="8" width="2" height="8.2" rx="1"/><rect x="13.9" y="10" width="2" height="6.2" rx="1"/></g>
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 6.6C10.4 5.2 8 4.6 4.5 4.6v13.2c3.5 0 5.9.6 7.5 2 1.6-1.4 4-2 7.5-2V4.6c-3.5 0-5.9.6-7.5 2Z"/><path d="M12 6.6v13.2"/></g>
+  </symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5V6.7a2.2 2.2 0 0 0-2.2-2.2H6.7a2.2 2.2 0 0 0-2.2 2.2v6.6a2.2 2.2 0 0 0 2.2 2.2h1.8"/></g>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/>
+  </symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7.5 16.5 16.5 7.5M9 7.5h7.5V15"/>
+  </symbol>
+  <!-- Nav and diagram glyphs. -->
+  <symbol id="i-flow" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="7" r="2.3"/><circle cx="5.5" cy="17" r="2.3"/><rect x="15" y="9.6" width="5.5" height="4.8" rx="1.6"/><path d="M7.8 7h2.4a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 0 1.5 1.5H15M7.8 17h2.4a2 2 0 0 0 2-2v-1.5"/></g>
+  </symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 19.5V13M10 19.5V5M15 19.5v-9M20 19.5V8"/></g>
+  </symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" d="M19.5 14.6A7.9 7.9 0 0 1 9.4 4.5a7.9 7.9 0 1 0 10.1 10.1Z"/>
+  </symbol>
+  <symbol id="i-home" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M4 10.6 12 4l8 6.6V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19Z"/><path d="M9.5 20.5v-5.5h5v5.5"/></g>
+  </symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.6"/><path d="m7 9.5 3 2.5-3 2.5M12.5 15h4.5"/></g>
+  </symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 3.5c.6 4.4 2.6 6.9 8.5 8.5-5.9 1.6-7.9 4.1-8.5 8.5-.6-4.4-2.6-6.9-8.5-8.5 5.9-1.6 7.9-4.1 8.5-8.5Z"/>
+  </symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6.5" y="2.8" width="11" height="18.4" rx="2.8"/><path d="M10.6 5.6h2.8"/></g>
+  </symbol>
+  <symbol id="i-laptop" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><rect x="4.5" y="5" width="15" height="10.5" rx="1.6"/><path d="M2.5 18.8h19"/></g>
+  </symbol>
+  <symbol id="i-db" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6"/></g>
+  </symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></g>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="m15.2 15.2 4.8 4.8"/></g>
+  </symbol>
+  <!-- Menu-bar extras on the drawn Mac screen. -->
+  <symbol id="i-wifi" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2.8 9.2a13.2 13.2 0 0 1 18.4 0"/><path d="M6.1 12.6a8.4 8.4 0 0 1 11.8 0"/><path d="M9.3 15.9a3.9 3.9 0 0 1 5.4 0"/></g>
+    <circle fill="currentColor" cx="12" cy="19" r="1.6"/>
+  </symbol>
+  <symbol id="i-battery" viewBox="0 0 30 16">
+    <rect x="1" y="2" width="24" height="12" rx="3.6" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="1.3"/>
+    <rect x="3" y="4" width="16" height="8" rx="2" fill="currentColor"/>
+    <path d="M27 6.1v3.8c.9-.3 1.5-1.1 1.5-1.9s-.6-1.6-1.5-1.9Z" fill="currentColor" fill-opacity=".55"/>
+  </symbol>
+  <symbol id="i-control" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="6" rx="3"/><rect x="3" y="13.5" width="18" height="6" rx="3"/></g>
+    <circle fill="currentColor" cx="17.9" cy="7.5" r="1.9"/><circle fill="currentColor" cx="6.1" cy="16.5" r="1.9"/>
+  </symbol>
+</svg>
+
+<header class="top" id="top-bar">
+  <a class="mark" href="#top" aria-label="Screen Time Exporter, back to top">
+    <span class="mark-tile"><svg width="20" height="20" aria-hidden="true"><use href="#i-mark"/></svg></span>
+    <span>Screen Time Exporter</span>
+    <span class="mark-version">v__VERSION__</span>
+  </a>
+  <nav class="top-nav" aria-label="Sections">
+    <span class="nav-glow" aria-hidden="true"></span>
+    <a href="#how"><svg width="15" height="15" aria-hidden="true"><use href="#i-flow"/></svg>How it works</a>
+    <a href="#grafana"><svg width="15" height="15" aria-hidden="true"><use href="#i-chart"/></svg>Grafana</a>
+    <a href="#home-assistant"><svg width="15" height="15" aria-hidden="true"><use href="#i-home"/></svg>Home Assistant</a>
+    <a href="#terminal"><svg width="15" height="15" aria-hidden="true"><use href="#i-terminal"/></svg>Terminal</a>
+    <a href="#mcp"><svg width="15" height="15" aria-hidden="true"><use href="#i-spark"/></svg>MCP</a>
+  </nav>
+  <div class="top-actions">
+    <a class="icon-btn" href="https://github.com/nichtlegacy/screentime" rel="noopener" aria-label="Source code on GitHub">
+      <svg width="17" height="17" aria-hidden="true"><use href="#i-github"/></svg>
+    </a>
+    <a class="pill solid" href="#install">Install</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- The hero is a Mac screen at night: a bezel running off the right edge,
+       a menu bar along its top, and the Grafana dashboard (demo data) open in
+       a window. Scrolling the page scrolls the dashboard a little too. -->
+  <section class="hero" id="top">
+    <div class="device" id="device">
+      <div class="screen">
+        <div class="menubar" aria-hidden="true">
+          <span class="extra"><svg width="15" height="15"><use href="#i-wifi"/></svg></span>
+          <span class="extra"><svg width="25" height="13"><use href="#i-battery"/></svg></span>
+          <span class="extra"><svg width="14" height="14"><use href="#i-search"/></svg></span>
+          <span class="extra"><svg width="15" height="15"><use href="#i-control"/></svg></span>
+          <time class="extra extra-time" id="menu-time">Tue Oct 6&nbsp;&nbsp;23:42</time>
+        </div>
+        <figure class="app-window hero-window" id="hero-window">
+          <div class="window-bar" aria-hidden="true"><i></i><i></i><i></i><span>Screen Time · Grafana</span></div>
+          <div class="window-view">
+            <img src="screenshots/dashboard.webp" width="1600" height="1890" fetchpriority="high"
+                 alt="The Grafana dashboard with demo data: today's screen time of 7.9 hours with an hourly sparkline, today per device, the 7-day average and its change, daily bars by device and by category, a category donut, and the top apps.">
+          </div>
+        </figure>
+      </div>
+    </div>
+
+    <div class="hero-copy">
+      <p class="eyebrow">
+        <span>Apple Screen Time</span>
+        <span class="mark-tile eyebrow-icon" aria-hidden="true"><svg width="22" height="22"><use href="#i-mark"/></svg></span>
+        <span>from iPhone, iPad and Mac</span>
+      </p>
+      <h1>Your Screen Time,<br>in your own database.</h1>
+      <p class="lede">Read on your Mac every 15&nbsp;minutes, kept in local SQLite, sent to Grafana, Home Assistant, your terminal and your AI&nbsp;assistant.</p>
+      <div class="install-line">
+        <button class="cmd" type="button" data-copy="uv tool install git+https://github.com/nichtlegacy/screentime" aria-label="Copy install command">
+          <span class="cmd-prompt" aria-hidden="true">$</span>
+          <code>uv tool install git+https://github.com/nichtlegacy/screentime</code>
+          <svg class="cmd-icon" width="15" height="15" aria-hidden="true"><use href="#i-copy"/></svg>
+        </button>
+        <p class="fine">then <code>screentime setup</code></p>
+      </div>
+      <div class="actions">
+        <a class="pill solid lg" href="https://github.com/nichtlegacy/screentime" rel="noopener">
+          <svg width="17" height="17" aria-hidden="true"><use href="#i-github"/></svg>
+          GitHub
+        </a>
+        <a class="pill ghost lg" href="https://github.com/nichtlegacy/screentime/tree/main/docs" rel="noopener">
+          <svg width="17" height="17" aria-hidden="true"><use href="#i-book"/></svg>
+          Docs
+        </a>
+      </div>
+      <p class="specs">Free &amp; open source · macOS · Python 3.11+ · MIT · v__VERSION__</p>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="wrap">
+      <header class="section-head stack-head reveal">
+        <h2>Read on the Mac, every 15&nbsp;minutes</h2>
+        <p>Your Mac already receives your iPhone and iPad usage through iCloud. Every 15&nbsp;minutes <code>screentime run</code> reads Apple’s stores, saves new sessions to SQLite and passes changed days on.</p>
+      </header>
+
+      <ol class="flow reveal" aria-label="Data flow">
+        <li class="stage">
+          <h3 class="stage-name">Devices</h3>
+          <ul class="nodes">
+            <li class="node" style="--c: var(--blue)"><svg width="18" height="18" aria-hidden="true"><use href="#i-phone"/></svg><span><b>iPhone · iPad</b><small>Share Across Devices</small></span></li>
+            <li class="node" style="--c: var(--green)"><svg width="18" height="18" aria-hidden="true"><use href="#i-laptop"/></svg><span><b>This Mac</b><small>its own usage</small></span></li>
+          </ul>
+        </li>
+        <li class="link" aria-hidden="true"><span class="wire" data-label="iCloud"></span><span class="wire" data-label="on disk"></span></li>
+        <li class="stage">
+          <h3 class="stage-name">Apple’s stores</h3>
+          <ul class="nodes">
+            <li class="node" style="--c: var(--violet)"><svg width="18" height="18" aria-hidden="true"><use href="#i-db"/></svg><span><b>Biome</b><small>App.InFocus</small></span></li>
+            <li class="node" style="--c: var(--violet)"><svg width="18" height="18" aria-hidden="true"><use href="#i-db"/></svg><span><b>knowledgeC.db</b><small>/app/usage, via a copy</small></span></li>
+          </ul>
+        </li>
+        <li class="link" aria-hidden="true"><span class="wire" data-label="read-only"></span></li>
+        <li class="stage">
+          <h3 class="stage-name">On your Mac</h3>
+          <ul class="nodes">
+            <li class="node node-core"><svg width="18" height="18" aria-hidden="true"><use href="#i-clock"/></svg><span><b>screentime run</b><small>launchd, every 15 min</small></span></li>
+            <li class="node node-core"><svg width="18" height="18" aria-hidden="true"><use href="#i-db"/></svg><span><b>SQLite</b><small>sessions, daily aggregates</small></span></li>
+            <li class="node node-dashed"><svg width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg><span><b>App names</b><small>installed app · App Store</small></span></li>
+          </ul>
+        </li>
+        <li class="link" aria-hidden="true"><span class="wire" data-label="changed days"></span></li>
+        <li class="stage">
+          <h3 class="stage-name">Where it goes</h3>
+          <ul class="nodes">
+            <li class="node" style="--c: #f2a14b"><svg width="18" height="18" aria-hidden="true"><use href="#i-chart"/></svg><span><b>InfluxDB → Grafana</b><small>dashboard included</small></span></li>
+            <li class="node" style="--c: #41bdf5"><svg width="18" height="18" aria-hidden="true"><use href="#i-home"/></svg><span><b>Home Assistant</b><small>REST sensors</small></span></li>
+            <li class="node" style="--c: var(--ink-2)"><svg width="18" height="18" aria-hidden="true"><use href="#i-terminal"/></svg><span><b>summary · dump</b><small>terminal, CSV, JSON</small></span></li>
+            <li class="node" style="--c: var(--violet)"><svg width="18" height="18" aria-hidden="true"><use href="#i-spark"/></svg><span><b>screentime mcp</b><small>Claude · Codex · Cursor</small></span></li>
+          </ul>
+        </li>
+      </ol>
+
+      <ul class="facts reveal">
+        <li><b>Sessions, not totals.</b> Every app session, rolled up per day, app, category and hour.</li>
+        <li><b>Idempotent exports.</b> Changed days are rewritten, never duplicated. A failed export retries on the next run.</li>
+        <li><b>Readable names.</b> 270+ apps built in, the rest named from the app on your Mac or the App&nbsp;Store.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="grafana">
+    <div class="wrap">
+      <header class="section-head stack-head reveal">
+        <h2>A Grafana dashboard, ready to go</h2>
+        <p>Overview, devices and categories, apps, night and rhythm, with filters for device, category and app. <code>docker/docker-compose.yml</code> starts InfluxDB&nbsp;2.7 and Grafana&nbsp;12 with the datasource and the dashboard provisioned; an existing Grafana imports <a href="https://github.com/nichtlegacy/screentime/blob/main/grafana/dashboards/screentime.json" rel="noopener"><code>screentime.json</code></a>.</p>
+      </header>
+      <div class="features">
+        <article class="feature reveal">
+          <h3>Devices and categories</h3>
+          <p>Daily stacked bars per device and per category, the total per device and each category’s share.</p>
+          <div class="feature-art art-violet">
+            <img src="screenshots/categories.webp" width="517" height="334" loading="lazy" alt="The Category share panel with demo data: a donut chart led by Coding at 19.4 percent, Social at 18.2 percent and Media at 17.7 percent, with a legend of nine categories.">
+          </div>
+        </article>
+        <article class="feature reveal">
+          <h3>Apps</h3>
+          <p>The top apps across all devices, an app table with sessions and average per active day, and the top ten per device.</p>
+          <div class="feature-art art-blue">
+            <img src="screenshots/top-apps.webp" width="583" height="486" loading="lazy" alt="The Top apps panel with demo data: horizontal bars led by VS Code at 37.1 hours, Chrome at 33.4 hours and YouTube at 22.6 hours.">
+          </div>
+        </article>
+        <article class="feature reveal">
+          <h3>Rhythm</h3>
+          <p>A typical day as average minutes per hour, sessions per day, and a weekday by hour grid.</p>
+          <div class="feature-art art-teal">
+            <img src="screenshots/typical-day.webp" width="911" height="372" loading="lazy" alt="The Typical day panel with demo data: average minutes per hour from 00 to 23, stacked by MacBook, iPad and iPhone, busiest in the afternoon and around 21:00.">
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="night">
+    <div class="wrap">
+      <div class="night-head">
+        <div class="reveal">
+          <h2>After midnight,<br>counted apart.</h2>
+          <p class="lede">Use after midnight is counted on its own: in the dashboard, in Home Assistant, in every report and over MCP.</p>
+        </div>
+        <div class="reveal">
+          <ul class="readouts" aria-label="Night measures">
+            <li><span>Late night</span><b>00:00 – 06:00</b></li>
+            <li><span>Deep night</span><b>03:00 – 06:00</b></li>
+            <li><span>Bedtime and wake-up</span><b>last and first use</b></li>
+          </ul>
+          <p class="fine">Sessions crossing a boundary are split, and a night counts towards the day it falls on. Bedtime and wake-up frame the night’s longest gap of at least three hours without use on any device.</p>
+        </div>
+      </div>
+      <figure class="app-window night-shot reveal">
+        <div class="window-bar" aria-hidden="true"><i></i><i></i><i></i><span>Screen Time · Night</span></div>
+        <img src="screenshots/night.webp" width="1600" height="536" loading="lazy" alt="The Night section of the dashboard with demo data: 8 minutes of late night today, 157 minutes over 7 days, no deep night, a bar chart of late night per day split into 00–03 and 03–06, and a bedtime and wake-up chart with the phone-free night shaded between the lines.">
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="home-assistant">
+    <div class="wrap duo flip">
+      <div class="duo-copy align-end reveal">
+        <h2>Sensors for<br>Home Assistant.</h2>
+        <p class="lede">Sensors per device, per night and per week, updated every 15&nbsp;minutes. No integration needed.</p>
+        <a class="pill ghost" href="https://github.com/nichtlegacy/screentime/blob/main/docs/home-assistant.md" rel="noopener">
+          <svg width="15" height="15" aria-hidden="true"><use href="#i-book"/></svg>
+          Sensors and automations
+        </a>
+      </div>
+      <div class="duo-media reveal">
+        <!-- Entity ids, units and friendly names as src/screentime/homeassistant.py
+             writes them, for the demo devices; the states are demo values. -->
+        <div class="stack">
+          <div class="card ha" role="img" aria-label="Home Assistant entities with demo values: Screen Time Total 474 minutes, iPhone 132 minutes, iPhone late night 8 minutes, this week 1,006 minutes, top app today VS Code, and the last sync at 23:45.">
+            <div class="card-head"><span>Screen Time</span><small>demo values</small></div>
+            <ul>
+              <li><svg width="18" height="18"><use href="#i-mark"/></svg><span><b>Screen Time Total</b><code>sensor.screentime_total</code></span><em>474.0 min</em></li>
+              <li><svg width="18" height="18"><use href="#i-phone"/></svg><span><b>Screen Time iPhone</b><code>sensor.screentime_iphone</code></span><em>132.0 min</em></li>
+              <li><svg width="18" height="18"><use href="#i-moon"/></svg><span><b>Screen Time iPhone Late Night</b><code>sensor.screentime_iphone_late_night</code></span><em>8.0 min</em></li>
+              <li><svg width="18" height="18"><use href="#i-chart"/></svg><span><b>Screen Time This Week</b><code>sensor.screentime_week</code></span><em>1006.0 min</em></li>
+              <li><svg width="18" height="18"><use href="#i-spark"/></svg><span><b>Top App Today</b><code>sensor.screentime_top_app</code></span><em>VS Code</em></li>
+              <li><svg width="18" height="18"><use href="#i-clock"/></svg><span><b>Screen Time Last Sync</b><code>sensor.screentime_last_sync</code></span><em>23:45</em></li>
+            </ul>
+          </div>
+          <div class="card code" role="img" aria-label="Home Assistant automation in YAML: when sensor.screentime_iphone_late_night rises above 30, send a notification.">
+            <div class="card-head"><span>automations.yaml</span></div>
+<pre><span class="t-key">- alias:</span> Late-night screen time
+  <span class="t-key">triggers:</span>
+    <span class="t-key">- trigger:</span> numeric_state
+      <span class="t-key">entity_id:</span> <span class="t-val">sensor.screentime_iphone_late_night</span>
+      <span class="t-key">above:</span> <span class="t-num">30</span>
+  <span class="t-key">actions:</span>
+    <span class="t-key">- action:</span> notify.notify
+      <span class="t-key">data:</span>
+        <span class="t-key">message:</span> Still up after midnight.</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="terminal">
+    <div class="wrap duo">
+      <div class="duo-media reveal">
+        <img class="window" src="screenshots/summary.webp" width="1200" height="1379" loading="lazy" alt="A terminal running screentime summary --week last on demo data: 64 hours 15 minutes in total, minus 15 percent against the week before, bars for devices, days, top apps and categories, the late-night line and an hour-of-day sparkline.">
+      </div>
+      <div class="duo-copy reveal">
+        <h2>A week in<br>the terminal.</h2>
+        <p class="lede"><code>screentime summary</code> reports a week, a day or any range: total, change against the period before, devices, days, top apps, categories, late night and an hour-of-day sparkline.</p>
+        <ul class="readouts cmds" aria-label="Report commands">
+          <li><code>summary --week last</code><span>text</span></li>
+          <li><code>summary --day --format markdown</code><span>for notes</span></li>
+          <li><code>summary --format json</code><span>for scripts</span></li>
+          <li><code>dump --daily -o days.csv</code><span>CSV or JSON</span></li>
+        </ul>
+        <p class="fine">Both read the database read-only, so they never get in the way of the next sync.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="mcp">
+    <div class="wrap duo flip">
+      <div class="duo-copy align-end reveal">
+        <h2>Ask your<br>assistant.</h2>
+        <p class="lede"><code>screentime mcp</code> lets Claude, Codex or Cursor answer questions from your local data, read-only.</p>
+        <button class="cmd" type="button" data-copy="claude mcp add -s user screentime -- screentime mcp" aria-label="Copy Claude Code command">
+          <span class="cmd-prompt" aria-hidden="true">$</span>
+          <code>claude mcp add -s user screentime -- screentime mcp</code>
+          <svg class="cmd-icon" width="15" height="15" aria-hidden="true"><use href="#i-copy"/></svg>
+        </button>
+        <p class="fine">Needs the <code>[mcp]</code> extra. Claude Desktop, Codex and Cursor: <a href="https://github.com/nichtlegacy/screentime/blob/main/docs/mcp.md" rel="noopener">docs/mcp.md</a>. Or let an agent do the whole setup: <a href="https://github.com/nichtlegacy/screentime/blob/main/docs/agent-installation.md" rel="noopener">the prompt</a>.</p>
+      </div>
+      <div class="duo-media reveal">
+        <div class="stack chat">
+          <p class="ask">Was I on screens after midnight last week? Which night was the worst?</p>
+          <p class="tool-call"><svg width="13" height="13" aria-hidden="true"><use href="#i-spark"/></svg><code>get_late_night</code> last_week</p>
+          <div class="card answer">
+            <p>Yes, every night. <b>3&nbsp;h&nbsp;09&nbsp;min</b> after midnight in total, 29&nbsp;min of it after 03:00.</p>
+            <p>The worst was Sunday into Monday: <b>1&nbsp;h&nbsp;01&nbsp;min</b>, the only night past 03:00. Friday into Saturday came close with 52&nbsp;min.</p>
+            <figure class="nights" aria-label="Minutes after midnight per night: Monday 61, Tuesday 9, Wednesday 37, Thursday 8, Friday 9, Saturday 52, Sunday 13.">
+              <ul>
+                <li class="worst" style="--k:1"><span>Mon</span></li>
+                <li style="--k:0.15"><span>Tue</span></li>
+                <li style="--k:0.61"><span>Wed</span></li>
+                <li style="--k:0.13"><span>Thu</span></li>
+                <li style="--k:0.15"><span>Fri</span></li>
+                <li style="--k:0.85"><span>Sat</span></li>
+                <li style="--k:0.21"><span>Sun</span></li>
+              </ul>
+            </figure>
+          </div>
+          <p class="fine demo">Demo data</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install">
+    <div class="wrap">
+      <header class="section-head stack-head reveal">
+        <h2>Set up in three steps</h2>
+        <p>You need a Mac signed in to the same Apple Account as your iPhone and iPad, with <em>Screen Time → Share Across Devices</em> on for every device, and <a href="https://docs.astral.sh/uv/" rel="noopener">uv</a>, which brings its own Python 3.11+.</p>
+      </header>
+      <ol class="steps">
+        <li class="step reveal">
+          <h3>Install</h3>
+          <p>One package, one command, from GitHub.</p>
+          <button class="cmd" type="button" data-copy="uv tool install git+https://github.com/nichtlegacy/screentime" aria-label="Copy install command">
+            <span class="cmd-prompt" aria-hidden="true">$</span>
+            <code>uv tool install git+https://github.com/nichtlegacy/screentime</code>
+            <svg class="cmd-icon" width="15" height="15" aria-hidden="true"><use href="#i-copy"/></svg>
+          </button>
+        </li>
+        <li class="step reveal">
+          <h3>Run the wizard</h3>
+          <p>Finds and names your devices, tests InfluxDB and Home Assistant, writes the config, runs a first sync and installs the agent.</p>
+          <button class="cmd" type="button" data-copy="screentime setup" aria-label="Copy setup command">
+            <span class="cmd-prompt" aria-hidden="true">$</span>
+            <code>screentime setup</code>
+            <svg class="cmd-icon" width="15" height="15" aria-hidden="true"><use href="#i-copy"/></svg>
+          </button>
+        </li>
+        <li class="step reveal">
+          <h3>Grant Full Disk Access</h3>
+          <p>Apple’s stores are protected. Allow your terminal, and the Python interpreter that setup prints for the background agent, under <em>Privacy &amp; Security → Full Disk Access</em>. <code>screentime doctor</code> checks the rest.</p>
+        </li>
+      </ol>
+      <p class="links reveal">
+        <a href="https://github.com/nichtlegacy/screentime/blob/main/docs/setup.md" rel="noopener">Setup guide<svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a href="https://github.com/nichtlegacy/screentime/blob/main/docs/migration.md" rel="noopener">Upgrading from v1<svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a href="https://github.com/nichtlegacy/screentime/blob/main/docs/agent-installation.md" rel="noopener">Let an AI agent install it<svg width="14" height="14" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </p>
+    </div>
+  </section>
+
+  <section class="section more" id="more">
+    <div class="wrap">
+      <div class="more-grid">
+        <article class="reveal">
+          <h3>Privacy</h3>
+          <p>Everything stays on your Mac unless you configure a sink. Unknown apps are named from the Mac first; only bundle ids it cannot name go to Apple’s public lookup API, and <code>[lookup] enabled = false</code> turns that off. What an assistant sends to its model is up to the assistant.</p>
+        </article>
+        <article class="reveal">
+          <h3>What Apple keeps</h3>
+          <p>A few weeks; Biome holds about four. The first sync reads what is still there, and anything older exists only if the exporter was running. Read-only towards Apple: <code>knowledgeC.db</code> is read through a temporary copy.</p>
+        </article>
+        <article class="reveal">
+          <h3>macOS only</h3>
+          <p>iPhone and iPad data reaches the exporter through a Mac with Screen Time sharing on; there is no iOS app. Tested on macOS&nbsp;27 on Apple silicon. Not on PyPI yet: install from GitHub with uv, pipx or pip.</p>
+        </article>
+        <article class="reveal">
+          <h3>App names</h3>
+          <p>270+ bundle ids ship with a name and one of 14 categories. Installed Mac apps name themselves; iPhone apps outside the App Store keep a guessed name until you name them in <code>[apps]</code> (<a href="https://github.com/nichtlegacy/screentime/blob/main/docs/apps.md" rel="noopener">how</a>). More mappings are welcome in <a href="https://github.com/nichtlegacy/screentime/blob/main/CONTRIBUTING.md" rel="noopener">pull requests</a>.</p>
+        </article>
+        <article class="reveal">
+          <h3>Upgrading from v1</h3>
+          <p>v2 replaces the CSV, the <code>.env</code> file and <code>aw-import-screentime</code> with one installed tool, and the v1 Home Assistant entity ids stay. The steps are in <a href="https://github.com/nichtlegacy/screentime/blob/main/docs/migration.md" rel="noopener">docs/migration.md</a>, the changes in the <a href="https://github.com/nichtlegacy/screentime/blob/main/CHANGELOG.md" rel="noopener">changelog</a>.</p>
+        </article>
+        <article class="reveal">
+          <h3>Unofficial</h3>
+          <p>An independent open-source hobby project, not affiliated with, endorsed or sponsored by Apple. Apple, Screen Time, iPhone, iPad, Mac, macOS and iCloud are trademarks of Apple Inc., used only to describe the data the project reads.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p>
+    Built by <a href="https://github.com/nichtlegacy" rel="noopener">nichtlegacy</a> ·
+    <a href="https://github.com/nichtlegacy/screentime" rel="noopener">Source</a> ·
+    <a href="https://github.com/nichtlegacy/screentime/tree/main/docs" rel="noopener">Docs</a> ·
+    <a href="https://github.com/nichtlegacy/screentime/blob/main/CHANGELOG.md" rel="noopener">Changelog</a> ·
+    <a href="https://github.com/nichtlegacy/screentime/blob/main/LICENSE" rel="noopener">MIT</a>
+  </p>
+  <p class="credits">
+    SEGB reader from <a href="https://github.com/cclgroupltd/ccl-segb" rel="noopener">cclgroupltd/ccl-segb</a> ·
+    where the data lives, shown by <a href="https://github.com/ActivityWatch/aw-import-screentime" rel="noopener">aw-import-screentime</a> ·
+    screenshots use demo data
+  </p>
+</footer>
+
+</body>
+</html>

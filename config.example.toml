@@ -1,0 +1,45 @@
+# Screen Time Exporter configuration.
+# `screentime setup` writes ~/.config/screentime/config.toml for you; or copy
+# this file there (or point SCREENTIME_CONFIG at it).
+# Every key is optional. Environment variables override this file:
+# SCREENTIME_TIMEZONE, SCREENTIME_DB_PATH, INFLUX_URL, INFLUX_TOKEN,
+# INFLUX_ORG, INFLUX_BUCKET, HA_URL, HA_TOKEN.
+
+# IANA time zone for daily totals and the late-night split (default: system zone).
+# timezone = "America/New_York"
+
+# SQLite database (default: ~/Library/Application Support/screentime/screentime.db).
+# db_path = "~/Library/Application Support/screentime/screentime.db"
+
+[sources]
+biome = true       # iPhone/iPad usage synced to this Mac through iCloud
+knowledgec = true  # this Mac's own usage
+
+# Display names by device id (`screentime status` lists the ids).
+# `false` ignores a device: its new usage is not imported.
+[devices]
+# "00000000-0000-0000-0000-000000000000" = "Work iPhone"
+# "11111111-1111-1111-1111-111111111111" = false
+
+# Rename or recategorise apps by bundle id (docs/apps.md), one line per app:
+# [apps]
+# "com.example.app" = { name = "Example", category = "Productivity" }
+
+# Look up bundle ids missing from the shipped list in Apple's public iTunes
+# Lookup API. Only bundle ids are sent; results are cached in the database.
+[lookup]
+# enabled = true
+# country = "de"  # App Store storefront (default: your Mac's region, US as fallback)
+
+[influx]
+# url = "http://localhost:8086"
+# token = ""
+# org = "home"
+# bucket = "screentime"
+
+[home_assistant]
+# url = "http://homeassistant.local:8123"
+# token = ""
+# Sensors are sensor.<entity_prefix>_total, … (see docs/home-assistant.md).
+# Use a different prefix per Mac when several Macs report to one Home Assistant.
+# entity_prefix = "screentime"

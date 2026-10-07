@@ -1,0 +1,13 @@
+apiVersion: 1
+datasources:
+  - name: InfluxDB-Screentime
+    uid: screentime-influxdb
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    jsonData:
+      version: Flux
+      organization: ${INFLUX_ORG}
+      defaultBucket: ${INFLUX_BUCKET}
+    secureJsonData:
+      token: ${INFLUX_TOKEN}

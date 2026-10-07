@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- Social preview (1200x630), rendered to site/og.png by build_site_images.py. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: Geist; src: url(../site/fonts/Geist-Variable.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Geist Mono"; src: url(../site/fonts/GeistMono-Variable.woff2) format("woff2"); font-weight: 100 900; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    font-family: Geist, sans-serif; color: #f4f4f7;
+    background:
+      radial-gradient(42% 60% at 86% 8%, rgba(124, 106, 255, 0.34), transparent 70%),
+      radial-gradient(30% 40% at 100% 70%, rgba(87, 148, 242, 0.16), transparent 72%),
+      radial-gradient(40% 60% at 0% 100%, rgba(58, 47, 143, 0.30), transparent 70%),
+      #09090d;
+  }
+  .copy { position: absolute; left: 72px; top: 64px; width: 530px; }
+  .brand { display: flex; align-items: center; gap: 16px; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: #c9c9d6; }
+  .brand img { width: 64px; height: 64px; border-radius: 15px; box-shadow: 0 0 40px rgba(157, 140, 255, 0.45); }
+  h1 { margin: 44px 0 0; font-size: 64px; line-height: 1.04; font-weight: 650; letter-spacing: -0.045em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 40px; }
+  .chips span { padding: 8px 15px; border-radius: 999px; font-size: 19px; font-weight: 500; color: #d6d6e0; background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12); }
+  .url { position: absolute; left: 72px; bottom: 52px; font-family: "Geist Mono", monospace; font-size: 19px; color: #8a8a9c; }
+  .url b { color: #b9adff; font-weight: 500; }
+  .window {
+    position: absolute; left: 618px; top: 92px; width: 640px; height: 600px;
+    border-radius: 14px; overflow: hidden; background: #111217;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 40px 100px -20px rgba(0,0,0,0.9), 0 0 120px -30px rgba(157,140,255,0.5);
+  }
+  .bar { position: relative; height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #1f1f24; border-bottom: 1px solid #000; }
+  .bar i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+  .bar i:nth-child(2) { background: #febc2e; } .bar i:nth-child(3) { background: #28c840; }
+  .bar span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14px; font-weight: 600; color: #9a9aa8; }
+  .view { height: 562px; overflow: hidden; }
+  .view img { display: block; width: 1000px; margin-left: -6px; }
+</style>
+</head>
+<body>
+  <div class="copy">
+    <div class="brand"><img src="../site/favicon.svg" alt="">Screen Time Exporter</div>
+    <h1>Your Screen Time,<br>in your own<br>database.</h1>
+    <div class="chips"><span>Grafana</span><span>Home Assistant</span><span>Terminal</span><span>MCP</span></div>
+  </div>
+  <div class="url"><b>screentime</b>.nichtlegacy.com</div>
+  <div class="window">
+    <div class="bar"><i></i><i></i><i></i><span>Screen Time · Grafana</span></div>
+    <div class="view"><img src="../.github/images/hero.png" alt=""></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,4005 @@
+{
+  "uid": "screentime",
+  "title": "Screen Time",
+  "description": "Apple Screen Time per device: daily totals, apps, categories, late-night use and daily rhythm. Data from screentime-exporter.",
+  "tags": [
+    "screentime"
+  ],
+  "editable": true,
+  "graphTooltip": 1,
+  "timezone": "browser",
+  "refresh": "",
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "templating": {
+    "list": [
+      {
+        "type": "datasource",
+        "name": "datasource",
+        "label": "Data source",
+        "query": "influxdb",
+        "current": {
+          "text": "InfluxDB-Screentime",
+          "value": "screentime-influxdb"
+        },
+        "hide": 0,
+        "refresh": 1,
+        "regex": ""
+      },
+      {
+        "type": "query",
+        "name": "bucket",
+        "label": "Bucket",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${datasource}"
+        },
+        "query": "buckets()\n  |> filter(fn: (r) => r.name !~ /^_/)\n  |> keep(columns: [\"name\"])",
+        "definition": "buckets()\n  |> filter(fn: (r) => r.name !~ /^_/)\n  |> keep(columns: [\"name\"])",
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "current": {
+          "text": "screentime",
+          "value": "screentime"
+        }
+      },
+      {
+        "type": "query",
+        "name": "device",
+        "label": "Device",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${datasource}"
+        },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"${bucket}\", tag: \"device\", predicate: (r) => r._measurement == \"screentime_daily\", start: -1y)",
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"${bucket}\", tag: \"device\", predicate: (r) => r._measurement == \"screentime_daily\", start: -1y)",
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "type": "query",
+        "name": "category",
+        "label": "Category",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${datasource}"
+        },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"${bucket}\", tag: \"category\", predicate: (r) => r._measurement == \"screentime_app_daily\", start: -1y)",
+        "definition": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"${bucket}\", tag: \"category\", predicate: (r) => r._measurement == \"screentime_app_daily\", start: -1y)",
+        "refresh": 1,
+        "sort": 1,
+        "hide": 0,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "app",
+        "label": "App search",
+        "query": "",
+        "hide": 0,
+        "description": "Case-insensitive substring of the app name",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Today",
+      "description": "Screen time today, with use per hour as the sparkline. Honours the device filter only.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_hourly\" and r._field == \"duration_s\" and contains(value: r.device, set: ${device:json}))\n  |> group(columns: [\"_time\"])\n  |> sum()\n  |> group()\n  |> map(fn: (r) => ({_time: r._time, _value: r._value / 3600.0}))\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5794F2"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5794F2",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "Today by device",
+      "description": "Screen time today per device, in the device colours of the charts below. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 5,
+        "y": 0,
+        "w": 7,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and r._field == \"duration_s\")\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"device\"])\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "noValue": "0",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.device}"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value_and_name",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Avg per day · 7 days",
+      "description": "Average daily screen time over the last 7 days, daily totals as the sparkline. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and r._field == \"duration_s\")\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"_time\"])\n  |> sum()\n  |> group()\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5794F2"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#5794F2",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now-6d/d",
+      "timeShift": "1d/d"
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "vs previous 7 days",
+      "description": "Change of the last 7 full days against the 7 days before them. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "import \"array\"\nimport \"date\"\nmid = date.add(d: 7d, to: v.timeRangeStart)\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> group()\ntotal = (tables) => {\n  column = tables |> sum() |> findColumn(fn: (key) => true, column: \"_value\")\n  return if length(arr: column) > 0 then column[0] else 0.0\n}\nprevious = total(tables: data |> filter(fn: (r) => r._time < mid))\ncurrent = total(tables: data |> filter(fn: (r) => r._time >= mid))\narray.from(rows: [{_value: if previous > 0.0 then (current - previous) / previous * 100.0 else 0.0}])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "text",
+                "value": -5
+              },
+              {
+                "color": "orange",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now-13d/d",
+      "timeShift": "1d/d"
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Sessions today",
+      "description": "Number of app sessions today, a rough proxy for pickups. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"event_count\"))\n  |> group()\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#8AB8FF"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#8AB8FF",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "Devices and categories",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Daily screen time by device",
+      "description": "Screen time per local day, stacked by device. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 16,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"device\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"device\"])\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "barAlignment": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "axisSoftMin": 0,
+            "gradientMode": "none"
+          },
+          "displayName": "${__field.labels.device}"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "bargauge",
+      "title": "Per device",
+      "description": "Total screen time per device in the selected range. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 6,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"device\"])\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.device}"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "top",
+        "sizing": "auto",
+        "text": {
+          "titleSize": 14,
+          "valueSize": 20
+        },
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Daily screen time by category",
+      "description": "Screen time per local day, stacked by app category. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 16,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"category\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"category\"])\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "barAlignment": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "axisSoftMin": 0,
+            "gradientMode": "none"
+          },
+          "displayName": "${__field.labels.category}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Social"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Communication"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Browser"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Productivity"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Coding"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "AI"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Media"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2DD4BF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gaming"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F7A1C4"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Health & Fitness"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#96D98D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Shopping"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FFCB7D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Finance"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Utilities"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8AB8FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "System"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6E6E6E"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#A6A6A6"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "piechart",
+      "title": "Category share",
+      "description": "Share of screen time per category in the selected range. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 15,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"category\"])\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "displayName": "${__field.labels.category}"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Social"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Communication"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Browser"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Productivity"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FADE2A"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Coding"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "AI"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Media"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#2DD4BF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gaming"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F7A1C4"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Health & Fitness"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#96D98D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Shopping"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FFCB7D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Finance"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#37872D"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Utilities"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8AB8FF"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "System"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6E6E6E"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Other"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#A6A6A6"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "percent"
+          ]
+        },
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "row",
+      "title": "Apps",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 15,
+      "type": "bargauge",
+      "title": "Top apps",
+      "description": "The 15 apps with the most screen time in the selected range, summed over the selected devices. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 9,
+        "h": 13
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"app\"])\n  |> sum()\n  |> group()\n  |> top(n: 15)\n  |> map(fn: (r) => ({app: r.app, _value: r._value}))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlPu"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "manual",
+        "minVizHeight": 16,
+        "maxVizHeight": 24,
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "/^_value$/",
+          "values": true
+        }
+      }
+    },
+    {
+      "id": 16,
+      "type": "table",
+      "title": "App details",
+      "description": "Per app: category, devices, total, average per active day and sessions in the selected range. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 25,
+        "w": 15,
+        "h": 13
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "base = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\" or r._field == \"event_count\"))\n  |> pivot(rowKey: [\"_time\", \"device\", \"app\", \"category\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group(columns: [\"app\", \"category\"])\ntotal = base |> sum(column: \"duration_s\")\nsessions = base |> sum(column: \"event_count\")\ndays = base |> group(columns: [\"app\", \"category\", \"_time\"]) |> first(column: \"duration_s\") |> group(columns: [\"app\", \"category\"]) |> count(column: \"duration_s\") |> rename(columns: {duration_s: \"days\"})\ndevices = base |> distinct(column: \"device\") |> map(fn: (r) => ({app: r.app, category: r.category, device: r._value})) |> group(columns: [\"app\", \"category\"]) |> reduce(identity: {list: \"\"}, fn: (r, accumulator) => ({list: if accumulator.list == \"\" then r.device else accumulator.list + \", \" + r.device}))\njoin(tables: {a: join(tables: {t: total, s: sessions}, on: [\"app\", \"category\"]), b: join(tables: {d: days, v: devices}, on: [\"app\", \"category\"])}, on: [\"app\", \"category\"])\n  |> map(fn: (r) => ({App: r.app, Category: r.category, Devices: r.list, Total: r.duration_s / 3600.0, \"Per active day\": r.duration_s / float(v: r.days) / 60.0, Sessions: r.event_count}))\n  |> group()\n  |> sort(columns: [\"Total\"], desc: true)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "suffix: h"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "continuous-BlPu"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 170
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "fieldMinMax",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Per active day"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "suffix: min"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Category"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sessions"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "sortBy": [
+          {
+            "displayName": "Total",
+            "desc": true
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "App": 0,
+              "Category": 1,
+              "Devices": 2,
+              "Total": 3,
+              "Per active day": 4,
+              "Sessions": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "type": "bargauge",
+      "title": "Top apps · ${device}",
+      "description": "The ten most used apps on each selected device, one panel per device. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and r.device == \"${device}\" and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"duration_s\"))\n  |> map(fn: (r) => ({r with _value: r._value / 3600.0}))\n  |> group(columns: [\"app\"])\n  |> sum()\n  |> group()\n  |> top(n: 10)\n  |> map(fn: (r) => ({app: r.app, _value: r._value}))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: h",
+          "decimals": 1,
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlPu"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "manual",
+        "minVizHeight": 16,
+        "maxVizHeight": 24,
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "/^_value$/",
+          "values": true
+        }
+      },
+      "repeat": "device",
+      "repeatDirection": "h",
+      "maxPerRow": 3
+    },
+    {
+      "id": 17,
+      "type": "row",
+      "title": "Night",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Late night today",
+      "description": "Use between 00:00 and 06:00 today. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 49,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_daily\" and (r._field == \"late_duration_s\") and contains(value: r.device, set: ${device:json}))\n  |> map(fn: (r) => ({r with _value: r._value / 60.0}))\n  |> group()\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: min",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#B877D9",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Late night · 7 days",
+      "description": "Total use between 00:00 and 06:00 over the last 7 full days. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 49,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_daily\" and (r._field == \"late_duration_s\") and contains(value: r.device, set: ${device:json}))\n  |> map(fn: (r) => ({r with _value: r._value / 60.0}))\n  |> group()\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: min",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#B877D9",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now-6d/d",
+      "timeShift": "1d/d"
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Deep night · 7 days",
+      "description": "Total use between 03:00 and 06:00 over the last 7 full days. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 49,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_daily\" and (r._field == \"deep_night_duration_s\") and contains(value: r.device, set: ${device:json}))\n  |> map(fn: (r) => ({r with _value: r._value / 60.0}))\n  |> group()\n  |> sum()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: min",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#F2495C"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#F2495C",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now-6d/d",
+      "timeShift": "1d/d"
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Late nights · 7 days",
+      "description": "Days among the last 7 full days with more than 15 minutes of use after midnight. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 49,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_daily\" and (r._field == \"late_duration_s\") and contains(value: r.device, set: ${device:json}))\n  |> group(columns: [\"_time\"])\n  |> sum()\n  |> group()\n  |> filter(fn: (r) => r._value > 900.0)\n  |> count()\n  |> map(fn: (r) => ({_value: float(v: r._value)}))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#B877D9",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "hideTimeOverride": true,
+      "timeFrom": "now-6d/d",
+      "timeShift": "1d/d"
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Late night per day",
+      "description": "Use after midnight per local day: 00:00–03:00 and the deep night 03:00–06:00 stacked. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 53,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_daily\" and (r._field == \"late_duration_s\" or r._field == \"deep_night_duration_s\") and contains(value: r.device, set: ${device:json}))\n  |> map(fn: (r) => ({r with _value: r._value / 60.0}))\n  |> group(columns: [\"_time\", \"_field\"])\n  |> sum()\n  |> pivot(rowKey: [\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> group()\n  |> map(fn: (r) => ({_time: r._time, \"00:00–03:00\": r.late_duration_s - r.deep_night_duration_s, \"03:00–06:00\": r.deep_night_duration_s}))\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: min",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "barAlignment": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "axisSoftMin": 0,
+            "gradientMode": "none"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "00:00–03:00"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "03:00–06:00"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#F2495C"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Bedtime and wake-up",
+      "description": "The night's phone-free window: the longest gap of at least 3 hours with no use on any selected device that ends between 03:00 and 15:00. Bedtime is the last use before that gap, wake-up the first use after it; the band between them is the phone-free night. Nights without such a gap are skipped. Uses the dashboard time zone. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 53,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "import \"date\"\nimport \"timezone\"\nloc = timezone.location(name: if \"${__timezone}\" == \"\" or \"${__timezone}\" == \"utc\" then \"UTC\" else \"${__timezone}\")\nref = float(v: int(v: date.truncate(t: 2001-01-01T12:00:00Z, unit: 1d, location: loc)) / 1000000)\nsessions = from(bucket: \"${bucket}\")\n  |> range(start: date.sub(d: 1d, from: v.timeRangeStart), stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime\" and r._field == \"duration_s\" and contains(value: r.device, set: ${device:json}))\n  |> group()\nstarts = sessions |> map(fn: (r) => ({_time: r._time, active: 1}))\nends = sessions |> map(fn: (r) => ({_time: time(v: int(v: r._time) + int(v: r._value * 1000000000.0)), active: -1}))\n// +1 per session start, -1 per end: a start that brings the count to 1 ends an idle gap\nunion(tables: [starts, ends])\n  |> sort(columns: [\"_time\", \"active\"])\n  |> cumulativeSum(columns: [\"active\"])\n  |> elapsed(unit: 1s)\n  |> filter(fn: (r) => r.active == 1 and r.elapsed >= 10800)\n  |> map(fn: (r) => {\n      day = date.truncate(t: r._time, unit: 1d, location: loc)\n      wake = float(v: int(v: r._time) - int(v: day)) / 3600000000000.0\n      return {_time: day, wake: wake, gap: float(v: r.elapsed) / 3600.0}\n  })\n  |> filter(fn: (r) => r.wake >= 3.0 and r.wake < 15.0 and r.gap <= 16.0)\n  |> group(columns: [\"_time\"])\n  |> max(column: \"gap\")\n  |> group()\n  |> filter(fn: (r) => r._time >= v.timeRangeStart)\n  |> map(fn: (r) => ({_time: r._time, bed: r.wake - r.gap, wake: r.wake, free: r.gap}))\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": -13.0833,
+                "to": -12.9168,
+                "result": {
+                  "text": "11:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -12.9167,
+                "to": -12.7501,
+                "result": {
+                  "text": "11:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -12.75,
+                "to": -12.5834,
+                "result": {
+                  "text": "11:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -12.5833,
+                "to": -12.4168,
+                "result": {
+                  "text": "11:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -12.4167,
+                "to": -12.2501,
+                "result": {
+                  "text": "11:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -12.25,
+                "to": -12.0834,
+                "result": {
+                  "text": "11:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -12.0833,
+                "to": -11.9168,
+                "result": {
+                  "text": "12:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -11.9167,
+                "to": -11.7501,
+                "result": {
+                  "text": "12:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -11.75,
+                "to": -11.5834,
+                "result": {
+                  "text": "12:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -11.5833,
+                "to": -11.4168,
+                "result": {
+                  "text": "12:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -11.4167,
+                "to": -11.2501,
+                "result": {
+                  "text": "12:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -11.25,
+                "to": -11.0834,
+                "result": {
+                  "text": "12:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -11.0833,
+                "to": -10.9168,
+                "result": {
+                  "text": "13:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -10.9167,
+                "to": -10.7501,
+                "result": {
+                  "text": "13:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -10.75,
+                "to": -10.5834,
+                "result": {
+                  "text": "13:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -10.5833,
+                "to": -10.4168,
+                "result": {
+                  "text": "13:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -10.4167,
+                "to": -10.2501,
+                "result": {
+                  "text": "13:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -10.25,
+                "to": -10.0834,
+                "result": {
+                  "text": "13:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -10.0833,
+                "to": -9.9168,
+                "result": {
+                  "text": "14:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -9.9167,
+                "to": -9.7501,
+                "result": {
+                  "text": "14:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -9.75,
+                "to": -9.5834,
+                "result": {
+                  "text": "14:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -9.5833,
+                "to": -9.4168,
+                "result": {
+                  "text": "14:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -9.4167,
+                "to": -9.2501,
+                "result": {
+                  "text": "14:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -9.25,
+                "to": -9.0834,
+                "result": {
+                  "text": "14:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -9.0833,
+                "to": -8.9168,
+                "result": {
+                  "text": "15:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -8.9167,
+                "to": -8.7501,
+                "result": {
+                  "text": "15:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -8.75,
+                "to": -8.5834,
+                "result": {
+                  "text": "15:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -8.5833,
+                "to": -8.4168,
+                "result": {
+                  "text": "15:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -8.4167,
+                "to": -8.2501,
+                "result": {
+                  "text": "15:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -8.25,
+                "to": -8.0834,
+                "result": {
+                  "text": "15:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -8.0833,
+                "to": -7.9168,
+                "result": {
+                  "text": "16:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -7.9167,
+                "to": -7.7501,
+                "result": {
+                  "text": "16:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -7.75,
+                "to": -7.5834,
+                "result": {
+                  "text": "16:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -7.5833,
+                "to": -7.4168,
+                "result": {
+                  "text": "16:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -7.4167,
+                "to": -7.2501,
+                "result": {
+                  "text": "16:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -7.25,
+                "to": -7.0834,
+                "result": {
+                  "text": "16:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -7.0833,
+                "to": -6.9168,
+                "result": {
+                  "text": "17:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -6.9167,
+                "to": -6.7501,
+                "result": {
+                  "text": "17:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -6.75,
+                "to": -6.5834,
+                "result": {
+                  "text": "17:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -6.5833,
+                "to": -6.4168,
+                "result": {
+                  "text": "17:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -6.4167,
+                "to": -6.2501,
+                "result": {
+                  "text": "17:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -6.25,
+                "to": -6.0834,
+                "result": {
+                  "text": "17:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -6.0833,
+                "to": -5.9168,
+                "result": {
+                  "text": "18:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -5.9167,
+                "to": -5.7501,
+                "result": {
+                  "text": "18:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -5.75,
+                "to": -5.5834,
+                "result": {
+                  "text": "18:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -5.5833,
+                "to": -5.4168,
+                "result": {
+                  "text": "18:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -5.4167,
+                "to": -5.2501,
+                "result": {
+                  "text": "18:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -5.25,
+                "to": -5.0834,
+                "result": {
+                  "text": "18:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -5.0833,
+                "to": -4.9168,
+                "result": {
+                  "text": "19:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -4.9167,
+                "to": -4.7501,
+                "result": {
+                  "text": "19:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -4.75,
+                "to": -4.5834,
+                "result": {
+                  "text": "19:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -4.5833,
+                "to": -4.4168,
+                "result": {
+                  "text": "19:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -4.4167,
+                "to": -4.2501,
+                "result": {
+                  "text": "19:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -4.25,
+                "to": -4.0834,
+                "result": {
+                  "text": "19:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -4.0833,
+                "to": -3.9168,
+                "result": {
+                  "text": "20:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -3.9167,
+                "to": -3.7501,
+                "result": {
+                  "text": "20:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -3.75,
+                "to": -3.5834,
+                "result": {
+                  "text": "20:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -3.5833,
+                "to": -3.4168,
+                "result": {
+                  "text": "20:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -3.4167,
+                "to": -3.2501,
+                "result": {
+                  "text": "20:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -3.25,
+                "to": -3.0834,
+                "result": {
+                  "text": "20:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -3.0833,
+                "to": -2.9168,
+                "result": {
+                  "text": "21:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -2.9167,
+                "to": -2.7501,
+                "result": {
+                  "text": "21:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -2.75,
+                "to": -2.5834,
+                "result": {
+                  "text": "21:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -2.5833,
+                "to": -2.4168,
+                "result": {
+                  "text": "21:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -2.4167,
+                "to": -2.2501,
+                "result": {
+                  "text": "21:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -2.25,
+                "to": -2.0834,
+                "result": {
+                  "text": "21:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -2.0833,
+                "to": -1.9168,
+                "result": {
+                  "text": "22:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -1.9167,
+                "to": -1.7501,
+                "result": {
+                  "text": "22:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -1.75,
+                "to": -1.5834,
+                "result": {
+                  "text": "22:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -1.5833,
+                "to": -1.4168,
+                "result": {
+                  "text": "22:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -1.4167,
+                "to": -1.2501,
+                "result": {
+                  "text": "22:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -1.25,
+                "to": -1.0834,
+                "result": {
+                  "text": "22:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -1.0833,
+                "to": -0.9168,
+                "result": {
+                  "text": "23:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -0.9167,
+                "to": -0.7501,
+                "result": {
+                  "text": "23:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -0.75,
+                "to": -0.5834,
+                "result": {
+                  "text": "23:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -0.5833,
+                "to": -0.4168,
+                "result": {
+                  "text": "23:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -0.4167,
+                "to": -0.2501,
+                "result": {
+                  "text": "23:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -0.25,
+                "to": -0.0834,
+                "result": {
+                  "text": "23:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": -0.0833,
+                "to": 0.0832,
+                "result": {
+                  "text": "00:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.0833,
+                "to": 0.2499,
+                "result": {
+                  "text": "00:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.25,
+                "to": 0.4166,
+                "result": {
+                  "text": "00:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.4167,
+                "to": 0.5832,
+                "result": {
+                  "text": "00:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.5833,
+                "to": 0.7499,
+                "result": {
+                  "text": "00:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.75,
+                "to": 0.9166,
+                "result": {
+                  "text": "00:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0.9167,
+                "to": 1.0832,
+                "result": {
+                  "text": "01:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1.0833,
+                "to": 1.2499,
+                "result": {
+                  "text": "01:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1.25,
+                "to": 1.4166,
+                "result": {
+                  "text": "01:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1.4167,
+                "to": 1.5832,
+                "result": {
+                  "text": "01:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1.5833,
+                "to": 1.7499,
+                "result": {
+                  "text": "01:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1.75,
+                "to": 1.9166,
+                "result": {
+                  "text": "01:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1.9167,
+                "to": 2.0832,
+                "result": {
+                  "text": "02:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 2.0833,
+                "to": 2.2499,
+                "result": {
+                  "text": "02:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 2.25,
+                "to": 2.4166,
+                "result": {
+                  "text": "02:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 2.4167,
+                "to": 2.5832,
+                "result": {
+                  "text": "02:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 2.5833,
+                "to": 2.7499,
+                "result": {
+                  "text": "02:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 2.75,
+                "to": 2.9166,
+                "result": {
+                  "text": "02:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 2.9167,
+                "to": 3.0832,
+                "result": {
+                  "text": "03:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 3.0833,
+                "to": 3.2499,
+                "result": {
+                  "text": "03:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 3.25,
+                "to": 3.4166,
+                "result": {
+                  "text": "03:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 3.4167,
+                "to": 3.5832,
+                "result": {
+                  "text": "03:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 3.5833,
+                "to": 3.7499,
+                "result": {
+                  "text": "03:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 3.75,
+                "to": 3.9166,
+                "result": {
+                  "text": "03:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 3.9167,
+                "to": 4.0832,
+                "result": {
+                  "text": "04:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 4.0833,
+                "to": 4.2499,
+                "result": {
+                  "text": "04:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 4.25,
+                "to": 4.4166,
+                "result": {
+                  "text": "04:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 4.4167,
+                "to": 4.5832,
+                "result": {
+                  "text": "04:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 4.5833,
+                "to": 4.7499,
+                "result": {
+                  "text": "04:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 4.75,
+                "to": 4.9166,
+                "result": {
+                  "text": "04:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 4.9167,
+                "to": 5.0832,
+                "result": {
+                  "text": "05:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 5.0833,
+                "to": 5.2499,
+                "result": {
+                  "text": "05:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 5.25,
+                "to": 5.4166,
+                "result": {
+                  "text": "05:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 5.4167,
+                "to": 5.5832,
+                "result": {
+                  "text": "05:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 5.5833,
+                "to": 5.7499,
+                "result": {
+                  "text": "05:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 5.75,
+                "to": 5.9166,
+                "result": {
+                  "text": "05:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 5.9167,
+                "to": 6.0832,
+                "result": {
+                  "text": "06:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 6.0833,
+                "to": 6.2499,
+                "result": {
+                  "text": "06:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 6.25,
+                "to": 6.4166,
+                "result": {
+                  "text": "06:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 6.4167,
+                "to": 6.5832,
+                "result": {
+                  "text": "06:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 6.5833,
+                "to": 6.7499,
+                "result": {
+                  "text": "06:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 6.75,
+                "to": 6.9166,
+                "result": {
+                  "text": "06:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 6.9167,
+                "to": 7.0832,
+                "result": {
+                  "text": "07:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 7.0833,
+                "to": 7.2499,
+                "result": {
+                  "text": "07:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 7.25,
+                "to": 7.4166,
+                "result": {
+                  "text": "07:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 7.4167,
+                "to": 7.5832,
+                "result": {
+                  "text": "07:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 7.5833,
+                "to": 7.7499,
+                "result": {
+                  "text": "07:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 7.75,
+                "to": 7.9166,
+                "result": {
+                  "text": "07:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 7.9167,
+                "to": 8.0832,
+                "result": {
+                  "text": "08:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 8.0833,
+                "to": 8.2499,
+                "result": {
+                  "text": "08:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 8.25,
+                "to": 8.4166,
+                "result": {
+                  "text": "08:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 8.4167,
+                "to": 8.5832,
+                "result": {
+                  "text": "08:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 8.5833,
+                "to": 8.7499,
+                "result": {
+                  "text": "08:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 8.75,
+                "to": 8.9166,
+                "result": {
+                  "text": "08:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 8.9167,
+                "to": 9.0832,
+                "result": {
+                  "text": "09:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 9.0833,
+                "to": 9.2499,
+                "result": {
+                  "text": "09:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 9.25,
+                "to": 9.4166,
+                "result": {
+                  "text": "09:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 9.4167,
+                "to": 9.5832,
+                "result": {
+                  "text": "09:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 9.5833,
+                "to": 9.7499,
+                "result": {
+                  "text": "09:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 9.75,
+                "to": 9.9166,
+                "result": {
+                  "text": "09:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 9.9167,
+                "to": 10.0832,
+                "result": {
+                  "text": "10:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 10.0833,
+                "to": 10.2499,
+                "result": {
+                  "text": "10:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 10.25,
+                "to": 10.4166,
+                "result": {
+                  "text": "10:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 10.4167,
+                "to": 10.5832,
+                "result": {
+                  "text": "10:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 10.5833,
+                "to": 10.7499,
+                "result": {
+                  "text": "10:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 10.75,
+                "to": 10.9166,
+                "result": {
+                  "text": "10:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 10.9167,
+                "to": 11.0832,
+                "result": {
+                  "text": "11:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 11.0833,
+                "to": 11.2499,
+                "result": {
+                  "text": "11:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 11.25,
+                "to": 11.4166,
+                "result": {
+                  "text": "11:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 11.4167,
+                "to": 11.5832,
+                "result": {
+                  "text": "11:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 11.5833,
+                "to": 11.7499,
+                "result": {
+                  "text": "11:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 11.75,
+                "to": 11.9166,
+                "result": {
+                  "text": "11:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 11.9167,
+                "to": 12.0832,
+                "result": {
+                  "text": "12:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 12.0833,
+                "to": 12.2499,
+                "result": {
+                  "text": "12:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 12.25,
+                "to": 12.4166,
+                "result": {
+                  "text": "12:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 12.4167,
+                "to": 12.5832,
+                "result": {
+                  "text": "12:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 12.5833,
+                "to": 12.7499,
+                "result": {
+                  "text": "12:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 12.75,
+                "to": 12.9166,
+                "result": {
+                  "text": "12:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 12.9167,
+                "to": 13.0832,
+                "result": {
+                  "text": "13:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 13.0833,
+                "to": 13.2499,
+                "result": {
+                  "text": "13:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 13.25,
+                "to": 13.4166,
+                "result": {
+                  "text": "13:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 13.4167,
+                "to": 13.5832,
+                "result": {
+                  "text": "13:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 13.5833,
+                "to": 13.7499,
+                "result": {
+                  "text": "13:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 13.75,
+                "to": 13.9166,
+                "result": {
+                  "text": "13:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 13.9167,
+                "to": 14.0832,
+                "result": {
+                  "text": "14:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 14.0833,
+                "to": 14.2499,
+                "result": {
+                  "text": "14:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 14.25,
+                "to": 14.4166,
+                "result": {
+                  "text": "14:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 14.4167,
+                "to": 14.5832,
+                "result": {
+                  "text": "14:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 14.5833,
+                "to": 14.7499,
+                "result": {
+                  "text": "14:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 14.75,
+                "to": 14.9166,
+                "result": {
+                  "text": "14:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 14.9167,
+                "to": 15.0832,
+                "result": {
+                  "text": "15:00"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 15.0833,
+                "to": 15.2499,
+                "result": {
+                  "text": "15:10"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 15.25,
+                "to": 15.4166,
+                "result": {
+                  "text": "15:20"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 15.4167,
+                "to": 15.5832,
+                "result": {
+                  "text": "15:30"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 15.5833,
+                "to": 15.7499,
+                "result": {
+                  "text": "15:40"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 15.75,
+                "to": 15.9166,
+                "result": {
+                  "text": "15:50"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 15.9167,
+                "to": 16.0832,
+                "result": {
+                  "text": "16:00"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#8AB8FF"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": false,
+            "axisPlacement": "left",
+            "axisLabel": "",
+            "axisSoftMin": -2,
+            "axisSoftMax": 10
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "bed"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Bedtime"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wake"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Wake-up"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8AB8FF"
+                }
+              },
+              {
+                "id": "custom.fillBelowTo",
+                "value": "Bedtime"
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "free"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Phone-free"
+              },
+              {
+                "id": "unit",
+                "value": "h"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "mappings",
+                "value": []
+              },
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "viz": true,
+                  "legend": true,
+                  "tooltip": false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "Rhythm",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 62,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "type": "barchart",
+      "title": "Typical day",
+      "description": "Average minutes of use in each hour of the day, per day with any use in the selected range, stacked by device. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 63,
+        "w": 14,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "import \"array\"\nn = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_daily\" and r._field == \"duration_s\" and contains(value: r.device, set: ${device:json}))\n  |> group()\n  |> unique(column: \"_time\")\n  |> count()\n  |> findColumn(fn: (key) => true, column: \"_value\")\ndays = if length(arr: n) > 0 and n[0] > 0 then float(v: n[0]) else 1.0\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_hourly\" and r._field == \"duration_s\" and contains(value: r.device, set: ${device:json}))\n  |> map(fn: (r) => ({device: r.device, Hour: r.hour, _value: r._value}))\n  |> group()\ndevs = data |> distinct(column: \"device\") |> findColumn(fn: (key) => true, column: \"_value\")\n// zero rows give every hour a bar even when nothing was used in it\nzeros = array.from(rows: array.map(arr: [\"00\", \"01\", \"02\", \"03\", \"04\", \"05\", \"06\", \"07\", \"08\", \"09\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\", \"18\", \"19\", \"20\", \"21\", \"22\", \"23\"], fn: (x) => ({device: if length(arr: devs) > 0 then devs[0] else \"-\", Hour: x, _value: 0.0})))\nunion(tables: [data, zeros])\n  |> group(columns: [\"device\", \"Hour\"])\n  |> sum()\n  |> map(fn: (r) => ({r with _value: r._value / days / 60.0}))\n  |> group()\n  |> pivot(rowKey: [\"Hour\"], columnKey: [\"device\"], valueColumn: \"_value\")\n  |> sort(columns: [\"Hour\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "suffix: min",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Hour"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "string"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "xField": "Hour",
+        "orientation": "vertical",
+        "stacking": "normal",
+        "showValue": "never",
+        "groupWidth": 0.8,
+        "barWidth": 1,
+        "barRadius": 0.1,
+        "xTickLabelSpacing": 0,
+        "xTickLabelRotation": 0,
+        "fullHighlight": false,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Sessions per day",
+      "description": "App sessions per local day by device, a rough proxy for pickups. Honours the device, category and app filters.",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 63,
+        "w": 10,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_app_daily\" and contains(value: r.device, set: ${device:json}) and contains(value: r.category, set: ${category:json}) and r.app =~ /(?i)${app:regex}/ and (r._field == \"event_count\"))\n  |> group(columns: [\"device\", \"_time\"])\n  |> sum()\n  |> group(columns: [\"device\"])\n  |> sort(columns: [\"_time\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 0,
+            "barAlignment": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "showPoints": "never",
+            "axisSoftMin": 0,
+            "gradientMode": "none"
+          },
+          "displayName": "${__field.labels.device}"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Weekday × hour",
+      "description": "Average minutes of use in each hour, per weekday, over the days with any use in the selected range. The last column is the average total for that weekday. Honours the device filter only (night and hourly data are not split by app).",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 73,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "query": "import \"array\"\ndata = from(bucket: \"${bucket}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"screentime_hourly\" and r._field == \"duration_s\" and contains(value: r.device, set: ${device:json}))\n  |> map(fn: (r) => ({weekday: r.weekday, hour: r.hour, day: int(v: r._time) - int(v: r.hour) * 3600000000000, _value: r._value}))\ndays = data |> group(columns: [\"weekday\"]) |> distinct(column: \"day\") |> count() |> rename(columns: {_value: \"days\"})\ntotals = data |> group(columns: [\"weekday\", \"hour\"]) |> sum()\nhours = [\"00\", \"01\", \"02\", \"03\", \"04\", \"05\", \"06\", \"07\", \"08\", \"09\", \"10\", \"11\", \"12\", \"13\", \"14\", \"15\", \"16\", \"17\", \"18\", \"19\", \"20\", \"21\", \"22\", \"23\"]\n// one zero row per weekday and hour so empty cells are 0, not null\nweek = (w) => array.from(rows: array.map(arr: hours, fn: (x) => ({Weekday: w, hour: x, _value: 0.0})))\nempty = union(tables: array.map(arr: [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\", \"7\"], fn: (x) => week(w: x)))\naverage = join(tables: {t: totals, d: days}, on: [\"weekday\"])\n  |> map(fn: (r) => ({Weekday: r.weekday, hour: r.hour, _value: r._value / float(v: r.days) / 60.0}))\n  |> group()\n// per weekday total in hours, last column after the hours\nperday = average |> group(columns: [\"Weekday\"]) |> sum() |> map(fn: (r) => ({Weekday: r.Weekday, hour: \"Total\", _value: r._value / 60.0})) |> group()\nunion(tables: [average, empty, perday])\n  |> group(columns: [\"Weekday\", \"hour\"])\n  |> sum()\n  |> group()\n  |> sort(columns: [\"hour\"])\n  |> pivot(rowKey: [\"Weekday\"], columnKey: [\"hour\"], valueColumn: \"_value\")\n  |> sort(columns: [\"Weekday\"])"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "min": 0,
+          "noValue": "",
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": -1,
+                "to": 0.5,
+                "result": {
+                  "text": " ",
+                  "color": "transparent"
+                }
+              }
+            }
+          ],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#2B2140",
+                "value": 0.5
+              },
+              {
+                "color": "#45306B",
+                "value": 5
+              },
+              {
+                "color": "#663F99",
+                "value": 15
+              },
+              {
+                "color": "#8F55C7",
+                "value": 30
+              },
+              {
+                "color": "#B57EE8",
+                "value": 45
+              }
+            ]
+          },
+          "custom": {
+            "align": "center",
+            "minWidth": 34,
+            "cellOptions": {
+              "type": "color-background",
+              "mode": "basic"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Weekday"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "Mon",
+                        "index": 0
+                      },
+                      "2": {
+                        "text": "Tue",
+                        "index": 1
+                      },
+                      "3": {
+                        "text": "Wed",
+                        "index": 2
+                      },
+                      "4": {
+                        "text": "Thu",
+                        "index": 3
+                      },
+                      "5": {
+                        "text": "Fri",
+                        "index": 4
+                      },
+                      "6": {
+                        "text": "Sat",
+                        "index": 5
+                      },
+                      "7": {
+                        "text": "Sun",
+                        "index": 6
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Per day"
+              },
+              {
+                "id": "unit",
+                "value": "suffix: h"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "mappings",
+                "value": []
+              },
+              {
+                "id": "fieldMinMax",
+                "value": true
+              },
+              {
+                "id": "custom.width",
+                "value": 150
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8F3BB8"
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      }
+    }
+  ]
+}

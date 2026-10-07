@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: screentime
+    folder: Screen Time
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

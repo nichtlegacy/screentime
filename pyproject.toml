@@ -1,0 +1,53 @@
+[project]
+name = "screentime-exporter"
+version = "2.0.0"
+description = "Export Apple Screen Time from iPhone, iPad and Mac to SQLite, InfluxDB and Home Assistant"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.11"
+dependencies = ["requests>=2.31,<3"]
+
+[project.scripts]
+screentime = "screentime.cli:main"
+
+[project.optional-dependencies]
+mcp = [
+    "mcp>=2.3.0",
+]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+screentime = ["data/*.json", "py.typed"]
+
+[dependency-groups]
+dev = [
+    "mcp>=2.3.0",
+    "mypy>=1.17,<2",
+    "pytest>=8,<9",
+    "ruff>=0.9,<1",
+    "types-requests>=2.32,<3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+# Vendored upstream code stays byte-identical, see THIRD_PARTY_NOTICES.md.
+extend-exclude = ["src/screentime/_vendor"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = "screentime._vendor.*"
+ignore_errors = true

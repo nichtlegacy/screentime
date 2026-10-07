@@ -1,0 +1,14 @@
+{
+  "name": "Screen Time Exporter",
+  "short_name": "Screen Time",
+  "description": "Apple Screen Time from iPhone, iPad and Mac in your own database.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#09090d",
+  "theme_color": "#09090d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

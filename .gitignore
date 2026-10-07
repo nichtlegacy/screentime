@@ -2,10 +2,12 @@
 .env
 
 # Data (keep locally, don't commit)
-data/
-*.csv
-*.csv.last
-.last_export_timestamp
+/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+screentime.lock
 
 # Logs
 logs/
@@ -17,9 +19,11 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-
-# aw-import-screentime (cloned separately)
-aw-import-screentime/
+*.egg-info/
+build/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 
 # macOS
 .DS_Store
@@ -28,3 +32,15 @@ aw-import-screentime/
 .vscode/
 .idea/
 .claude/
+
+# Local dev/test only
+.local/
+docker/.env
+AGENTS.md
+CLAUDE.md
+
+# Build output
+dist/
+
+# Landing page build (scripts/build_site.sh)
+_site/
